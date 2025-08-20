@@ -1,7 +1,7 @@
 {
-    "name": "retard-bot",
+    "name": "Eternity",
     "version": "1.0.0",
-    "description": "skyblock and its players are retarded",
+    "description": "skyblock and its players are super smart!",
     "main": "index.js",
     "bin": "start.js",
     "scripts": {

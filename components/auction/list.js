@@ -211,8 +211,6 @@ async function handleList(bot, auction) {
   
       bot.flayer._client.on('open_window', onWindow);
       bot.chat("/ah");
-      // Automatically resolve after 15 seconds
-
     });
   }
 

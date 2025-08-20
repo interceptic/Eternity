@@ -57,7 +57,6 @@ class Unit {
         this.chat = (text) => {
             this.packets.sendMessage(text);
         };
-        global.chat = this.chat;
         this.info = information;
         this.state = new DynamicState(this, "starting");
         this.stats = {

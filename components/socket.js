@@ -7,8 +7,6 @@ const { randomUUID } = require('crypto');
 
 class Socket {
     constructor(bot) {
-        const fs = require('fs');
-
         const config = JSON.parse(fs.readFileSync('./config.json', 'utf8'));
         if (config.modSocketID === "") {
             config.modSocketID = randomUUID();

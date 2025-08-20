@@ -1,7 +1,7 @@
 const {handler} = require("./components/bot")
 const fs = require('fs');
 const config = JSON.parse(fs.readFileSync('./config.json', 'utf8'));
-const defaultConfig = require("./defaultConfig.json")
+// const defaultConfig = require("./defaultConfig.json")
 const { askUser } = require("./components/console");
 const { log, sleep } = require("./components/utils")
 

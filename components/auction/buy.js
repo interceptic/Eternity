@@ -177,7 +177,7 @@ async function load(window, slot) {
                 clearInterval(timeToLoad);
                 resolve(itemSlot.name);
             }
-        }, 1); // check ever ms
+        }, 1); // check every ms
     });
 }
 

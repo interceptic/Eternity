@@ -22,7 +22,7 @@ async function island(bot, locraw) {
                 bot.flayer.removeListener('message', messageListener);
                 await sleep(2500)
                 await restartBot(bot, message.toAnsi().replace(/\x1b\[[0-9;]*m/g, ''));
-                return
+                return;
             }
         };
 

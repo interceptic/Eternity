@@ -10,7 +10,7 @@ async function getLocraw(bot) {
         return
       }, 10000);
       
-      // handlers messages
+      // handles messages
       const messageHandler = (jsonMsg) => {
         try {
           // string conversion
