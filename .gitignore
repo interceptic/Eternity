@@ -1,0 +1,11 @@
+node_modules/
+package-lock.json
+feature_test/
+components/cache/ 
+mineflayer/
+*.log
+dist/
+personal.json
+profileData.json
+baseString.json
+auctionData.json

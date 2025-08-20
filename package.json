@@ -1,0 +1,29 @@
+{
+    "name": "retard-bot",
+    "version": "1.0.0",
+    "description": "skyblock and its players are retarded",
+    "main": "index.js",
+    "bin": "start.js",
+    "scripts": {
+      "test": "start",
+      "start": "NODE_NO_WARNINGS=1 node start.js",
+      "build": "pkg . --targets node18-linux-x64,node18-macos-x64,node18-win-x64 --out-path dist"
+    },
+    "author": "interceptic",
+    "license": "MIT",
+    "dependencies": {
+      "axios": "^1.7.9",
+      "crypto": "^1.0.1",
+      "discord.js": "^14.18.0",
+      "events": "^3.3.0",
+      "fs": "^0.0.1-security",
+      "json": "^11.0.0",
+      "minecraft-data": "^3.85.0",
+      "mineflayer": "^4.26.0",
+      "ws": "^8.18.0"
+    },
+    "devDependencies": {
+      "pkg": "^5.8.1"
+    }
+  }
+  
