@@ -7,12 +7,20 @@ const { randomUUID } = require('crypto');
 
 class Socket {
     constructor(bot) {
-        const config = JSON.parse(fs.readFileSync('./config.json', 'utf8'));
-        if (config.modSocketID === "") {
-            config.modSocketID = randomUUID();
-            this.updateConfig(config);
+        if(process.env.username) {
+            if (process.env.modSocketID === "" || !process.env.modSocketID) {
+                console.error("Expected modSocketID in env, please apply before running in dev environment.")
+                process.exit(1)
+            }
+            this.id = process.env.modSocketId;
+        } else {
+            const config = JSON.parse(fs.readFileSync('./config.json', 'utf8'));
+            if (config.modSocketID === "") {
+                config.modSocketID = randomUUID();
+                this.updateConfig(config);
+            }
+            this.id = config.modSocketID;
         }
-        this.id = config.coflSocketID;
         this.link = `wss://sky.coflnet.com/modsocket?version=1.5.1-af&player=${bot.flayer._client.username}&SId=${this.id}` //autoflipper socket
         this.emitter = new EventEmitter();
         this.bot = bot;

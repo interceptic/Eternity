@@ -21,6 +21,7 @@ async function handler(username) {
     // object super important
     const bot = await Unit.create(username)
     global.bot = bot;
+    
     bot.state.setState("starting")
     await createListeners(bot)
     
@@ -29,6 +30,7 @@ async function handler(username) {
         let embed = await bot.hook.embed(`\`${username}\` Logged in!`, `**Successfully connected to Hypixel!**`, "white");
         embed.setThumbnail(`https://mc-heads.net/head/${bot.info['id']}`)
         await bot.hook.send(embed)
+        
         const stallInterval = setInterval(async () => {
             await stall(bot);
         }, 30000); // 30s heartbeat interval
@@ -69,12 +71,21 @@ class Unit {
             totalSlots: null,
             
         };
-        this.config = {
-            "listTime": config.customization.listTime,
-            "roundToNearest": config.customization.roundToNearest
+        if (process.env.username) {
+            this.config = {
+                "listTime": process.env.listTime,
+                "roundToNearest": process.env.roundToNearest
+            }
+        } else {
+            this.config = {
+                "listTime": config.customization.listTime,
+                "roundToNearest": config.customization.roundToNearest
+            }
         }
         this.holding = {};
         this.claimCell = {}
+        this.relistPipeline = []
+        this.claimPipeline = [];
         this.socket = null;
         this.hook = new Webhook(this);
         this.lastAction = Date.now();

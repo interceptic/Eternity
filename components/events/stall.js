@@ -88,10 +88,10 @@ async function restartBot(bot, reason) {
             await new Promise(resolve => setTimeout(resolve, 4000))
             // restart entire script
             const { handler } = require('../bot')
-            const config = require('../../config.json')
+            // const config = require('../../config.json')
             bot.flayer.removeAllListeners();
             await sleep(4000)
-            await handler(config.username)
+            await handler(bot.flayer._client.username)
             
         } catch (error) {
             console.error("Error during restart:", error)

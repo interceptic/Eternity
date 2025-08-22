@@ -5,7 +5,10 @@ const { BMK , sleep, log} = require('../utils')
 const fs = require('fs');
 const { handleTaxClaim } = require("./taxes")
 const { waitForTicks } = require("../events/tick")
-
+const nbt = require('prismarine-nbt');
+const zlib = require('zlib');
+const { listWithoutTarget } = require("./taxes");
+const RELIST_LOSS = 0.96;
 
 async function mainEntry(bot) {
     const { auctions, claimableAuctions, expiredAuctions } = await findAuctions(bot);
@@ -20,18 +23,24 @@ async function mainEntry(bot) {
     }
     bot.stats.activeSlots = auctions.length;
     let claimWorth = 0
-    if (!bot.claimPipeline) {
-        bot.claimPipeline = [];
-    }
     for(const auction of claimableAuctions) {
         claimWorth += auction.starting_bid;
         bot.claimPipeline.push(auction)
     }
-    for(const auction of expiredAuctions ) {
-        
+    let expiredWorth = 0;
+    let tax = 0;
+    for (const auction of expiredAuctions) {
+        bot.relistPipeline.push(auction)
+
+        // since I don't calculate for new price, lets just assume we lose 4% of original value (0.96)
+        const taxIncluded = listWithoutTarget(auction.starting_bid * RELIST_LOSS); // apply the listing tax assuming same price
+        const individualItemTax = (auction.starting_bid * RELIST_LOSS) - taxIncluded;
+        expiredWorth += taxIncluded;
+        tax += individualItemTax;
     }
+
     embed.addFields(
-        { name: 'Auction House', value: `Current Auctions: **${bot.stats.activeSlots}/${bot.stats.totalSlots} (${BMK(totalWorth)})**\nAuctions to Claim: **${claimableAuctions.length} (${BMK(claimWorth)})**\nAuctions to Relist: **${expiredAuctions.length} | Worth: ${BMK(0)} (${BMK(0)} Tax)**`, inline: false },
+        { name: 'Auction House', value: `Current Auctions: **${bot.stats.activeSlots}/${bot.stats.totalSlots} (${BMK(totalWorth)})**\nAuctions to Claim: **${claimableAuctions.length} (${BMK(claimWorth)})**\nAuctions to Relist: **${expiredAuctions.length} | Worth: ~${BMK(expiredWorth)} (${BMK(tax)} Tax)**`, inline: false },
         // { name: 'Forge', value: 'WIP', inline: true },
         // { name: 'Kat', value: 'WIP', inline: true },
         // { name: 'Total Profit', value: 'WIP', inline: false }
@@ -41,6 +50,8 @@ async function mainEntry(bot) {
  
 
     bot.state.emit("addToQueue", "claim")
+    bot.state.emit("addToQueue", "relist")
+
 }
 
 async function claimAuction(bot, auction) {

@@ -12,9 +12,21 @@ function handleTaxList(price, target) {
     return (profit - price);
 }
 
+function listWithoutTarget(price) {
+    if(price < 10000000) { // 10 million
+        price  *= 0.98
+    } else if (price < 100000000) { // 100 million
+        price *= 0.97
+    }
+    else { // over
+        price *= 0.965
+    }
+    return price;
+}
+
 function handleTaxClaim(profit) {
     if (profit < 1000000) return profit; // under 1 mil no 1% tax?
     return profit * .99;
 }
 
-module.exports = { handleTaxList, handleTaxClaim }
+module.exports = { handleTaxList, handleTaxClaim, listWithoutTarget}

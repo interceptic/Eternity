@@ -10,3 +10,4 @@ profileData.json
 baseString.json
 auctionData.json
 .DS_Store
+.env

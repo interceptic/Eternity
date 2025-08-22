@@ -139,6 +139,10 @@ class DynamicState extends EventEmitter {
             }
             case "list": {
                 for(let s = 0; s < this.bot.listPipeline.length; s++) {
+                    if (this.bot.listPipeline[s].finder.toLowerCase().includes("user")) {
+                        log(`Not lising ${this.bot.listPipeline[s].item} | Item found by user filter`, "sys")
+                        continue;
+                    }
                     if (this.bot.stats.activeSlots === this.bot.stats.totalSlots) {
                         log(`No available slots, ${this.bot.listPipeline[s].item} remaining in queue. (${this.bot.listPipeline.length} items in queue)`)
                         break;
@@ -151,10 +155,16 @@ class DynamicState extends EventEmitter {
                 }
                 break;
             }
-
+            case "relist": {
+                break; // going to sleep will work on later
+                log("Handling relist", "sys", true)
+                for(let s = 0; s < this.bot.expiredAuctions.length; s++) {
+                    await handleRelist(this.bot, this.bot.expiredAuctions[s]).catch(err => log(`Relist error detected: ${err}`, "warn"));
+                }
+            }
         }
         this.queue.splice(i, 1);
-        if (this.internalState === "pipelined") { 
+        if (this.internalState === "pipelined") {
             log("Internal state is pipelined, restarting queue process!", "sys");
             this.emit("restart");
             return;

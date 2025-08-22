@@ -112,7 +112,7 @@ async function handleMessageEvent(message, bot) {
             if(!bot.listPipeline) {
                 bot.listPipeline = [];
             }
-            bot.listPipeline.push({"item": itemName, "sellPrice": estimatedSellPrice, "id": id});
+            bot.listPipeline.push({"item": itemName, "sellPrice": estimatedSellPrice, "id": id, "finder": finder});
             let embed;
             // bought[2] is price with commas
             if(type === "Bed") {
