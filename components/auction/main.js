@@ -8,7 +8,7 @@ const { waitForTicks } = require("../events/tick")
 const nbt = require('prismarine-nbt');
 const zlib = require('zlib');
 const { listWithoutTarget } = require("./taxes");
-const RELIST_LOSS = 0.96;
+const RELIST_LOSS = 0.94;
 
 async function mainEntry(bot) {
     const { auctions, claimableAuctions, expiredAuctions } = await findAuctions(bot);
@@ -32,7 +32,7 @@ async function mainEntry(bot) {
     for (const auction of expiredAuctions) {
         bot.relistPipeline.push(auction)
 
-        // since I don't calculate for new price, lets just assume we lose 4% of original value (0.96)
+        // since I don't calculate for new price, lets just assume we lose 6% of original value (0.94)
         const taxIncluded = listWithoutTarget(auction.starting_bid * RELIST_LOSS); // apply the listing tax assuming same price
         const individualItemTax = (auction.starting_bid * RELIST_LOSS) - taxIncluded;
         expiredWorth += taxIncluded;

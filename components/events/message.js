@@ -112,7 +112,7 @@ async function handleMessageEvent(message, bot) {
             if(!bot.listPipeline) {
                 bot.listPipeline = [];
             }
-            bot.listPipeline.push({"item": itemName, "sellPrice": estimatedSellPrice, "id": id, "finder": finder});
+            bot.listPipeline.push({"item_name": itemName, "sellPrice": estimatedSellPrice, "uuid": id, "finder": finder});
             let embed;
             // bought[2] is price with commas
             if(type === "Bed") {
@@ -144,17 +144,17 @@ async function handleMessageEvent(message, bot) {
         }   
 
 
-        const listMessage = string.match(listRegex)
-        if (listMessage) {
-            let embed = await bot.hook.embed("Listed Auction", `Listed ${listMessage[3]} for ${listMessage[4]} coins!`, "lightBlue")
-            await bot.hook.send(embed)
-        }
+        // const listMessage = string.match(listRegex)
+        // if (listMessage) {
+        //     let embed = await bot.hook.embed("Listed Auction", `Listed ${listMessage[3]} for ${listMessage[4]} coins!`, "lightBlue")
+        //     await bot.hook.send(embed)
+        // }
 
-        const listMessage2 = string.match(listRegex2)
-        if (listMessage2) {
-            let embed = await bot.hook.embed("Listed Auction", `Listed ${listMessage2[3]} for ${listMessage2[4]} coins!`, "lightBlue")
-            await bot.hook.send(embed)
-        }
+        // const listMessage2 = string.match(listRegex2)
+        // if (listMessage2) {
+        //     let embed = await bot.hook.embed("Listed Auction", `Listed ${listMessage2[3]} for ${listMessage2[4]} coins!`, "lightBlue")
+        //     await bot.hook.send(embed)
+        // }
 
     }
 

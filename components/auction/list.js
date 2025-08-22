@@ -5,31 +5,15 @@ const config = JSON.parse(fs.readFileSync('./config.json', 'utf8'));
 const { log, sleep } = require("../utils")
 const { load } = require("./buy")
 
-
-async function handleRelist(bot, auction) {
-    return new Promise((resolve, reject) => {
-        const timeout = setTimeout(() => {
-            reject("Timeout Error")
-        }, 13000)
-
-
-
-
-        bot.chat(`/viewauction ${auction.uuid}`)
-    })
-}
-
-async function claimItem(bot, auction) {
+async function claimItem(bot, auction, type = false) {
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
-            cleanup();
-            resolve();
+            // cleanup();
+            reject("Timed out");
+            return;
           }, 15000);
 
       const cleanup = () => {
-        log("Removed listeners!", "sys", true)
-        bot.flayer._client.removeListener('open_window', onOpen);
-        bot.flayer.inventory.removeListener('updateSlot', onSlot);
         clearTimeout(timeout); // if it doesnt hang we dont want this to disable any listeners when listing something else 
       };
   
@@ -40,7 +24,7 @@ async function claimItem(bot, auction) {
           await load(bot.flayer.currentWindow, 31);
           await sleep(350);
           bot.packets.click(31, window.windowId, -1);
-          log("Supposedly click on gold block to claim action...", "sys", true);
+          log("Supposedly click on gold nugget/block to claim auction...", "sys", true);
         }
       }; 
   
@@ -53,20 +37,26 @@ async function claimItem(bot, auction) {
         log("Slot event fired, starting list process...", "sys", true)
         try {
           bot.flayer._client.removeListener('open_window', onOpen)
-          await handleList(bot, auction);
-          cleanup();
-          resolve();
+          await handleList(bot, auction, type).then(() => {
+            clearTimeout(timeout)
+            resolve();
+            return;
+          }).catch(err => {
+            clearTimeout(timeout)
+            reject(err)
+            return;
+          });
         } catch (e) {
-          cleanup();
-          reject(e);
+            clearTimeout(timeout)
+            reject(e);
         }
       };
   
-      bot.flayer._client.on('open_window', onOpen);
-      bot.flayer.inventory.on('updateSlot', onSlot);
+      bot.flayer._client.once('open_window', onOpen);
+      bot.flayer.inventory.once('updateSlot', onSlot);
   
     //   log(`Viewing auction ${auction.id}`, "sys");
-      bot.chat(`/viewauction ${auction.id}`);
+      bot.chat(`/viewauction ${auction.uuid}`);
       });
   }
   
@@ -86,7 +76,7 @@ async function claimItem(bot, auction) {
     //     await handleList(bot, auction)
     // })
 //   }
-async function handleList(bot, auction) {
+async function handleList(bot, auction, type) {
     return new Promise((resolve, reject) => {
         const timeout = setTimeout(() => {
             cleanup();
@@ -121,18 +111,14 @@ async function handleList(bot, auction) {
                     }
                 }
             }).slot
-            log(`Found appropriate create auction slot ${manageSlot}`, "sys", true)
-            bot.packets.click(manageSlot, window.windowId, -1);
+            log(`Found appropriate create auction slot ${createAuctionSlot}`, "sys", true)
+            bot.packets.click(createAuctionSlot, window.windowId, -1);
             break;
           // handle main window
-
           case title.includes("Auction Duration"):
             bot.packets.click(16, window.windowId, -1) // click on sign
             await sleep(500)
-            listTime = bot.config.listTime.toString()
-            if(process.env.listTime) {
-                listTime = process.env.listTime.toString()
-            }
+            const listTime = (process.env.listTime ?? bot.config.listTime).toString()
             bot.flayer._client.write('update_sign', {
                 location: bot.flayer.entity.position.offset(-1, 0, 0),
                 text1:  listTime,
@@ -148,7 +134,9 @@ async function handleList(bot, auction) {
                 const checkPriceSlot = () => {
                     const priceSlot = bot.flayer.currentWindow.slots[31]?.nbt?.value?.display?.value?.Name?.value;
                     if (!priceSlot.replace(/,/g, '').includes(`${auction.sellPrice}`)) {
-                        log(`Expected list price failed ${priceSlot}`, "sys")
+                        log(`Expected list price failed ${priceSlot}`, "sys", true)
+                        reject("Price mismatch")
+                        return
                     } else {
                         clearInterval(interval);
                         resolve();
@@ -156,6 +144,9 @@ async function handleList(bot, auction) {
                 };
                 const interval = setInterval(checkPriceSlot, 250);
                 setTimeout(() => clearInterval(interval), 500); // stop checking after 500 ms
+            }).catch(err => {
+                log(`Failed to list: ${err}`, "warn")
+                return;
             })
             setMessageListener(bot, auction, window)
             bot.packets.click(29, window.windowId, -1);
@@ -194,10 +185,19 @@ async function handleList(bot, auction) {
                   bot.packets.click(13, window.windowId, -1);
                   await sleep(300);
                 }
+                auction.sellPrice = type ? handleRounding(await getNewPrice(bot, auction)
+                .catch(err => {
+                    reject(err)
+                    return
+                })) 
+                : handleRounding(auction.sellPrice) 
+                if (isNaN(auction.sellPrice)) {
+                    log("Sell price is NaN", "warn");
+                    reject("NaN error")
+                    return;
+                }
                 bot.packets.click(auction.slot + bot.flayer.currentWindow.slots.length - 45, window.windowId, -1);
-                await sleep(500)
-                auction.sellPrice = Math.round((auction.sellPrice / 10000)) * 10000;
-
+                await sleep(400)
 
                 bot.packets.click(31, window.windowId, -1);
                 await sleep(1000)
@@ -217,7 +217,7 @@ async function handleList(bot, auction) {
             await sleep(200);
             bot.packets.click(11, window.windowId, -1);
 
-            let embed = await bot.hook.embed("Listed Auction!", `Listed ${auction.item} for \`${auction.sellPrice.toLocaleString()}\` coins!`, "lightBlue");
+            let embed = await bot.hook.embed("Listed Auction!", `Listed ${auction.item_name} for \`${auction.sellPrice.toLocaleString()}\` coins!`, "lightBlue");
             await bot.hook.send(embed)
             bot.stats.activeSlots++;
             cleanup();
@@ -232,6 +232,44 @@ async function handleList(bot, auction) {
   }
 
 
+function handleRounding(price) {
+    return Math.round((price / 10000)) * 10000
+}
+
+async function getNewPrice(bot, auction) {
+    return new Promise(async (resolve, reject) => {
+        try {
+            inventoryNbt = {
+                "_events": {},
+                "_eventsCount": 0,
+                "id": 0,
+                "type": "minecraft:inventory",
+                "title": "Inventory",
+                "slots": [bot.flayer.currentWindow.slots[auction.slot + bot.flayer.currentWindow.slots.length - 45]]
+            }
+            const data = (await axios.post('https://sky.coflnet.com/api/price/nbt', {
+                jsonNbt: JSON.stringify(inventoryNbt),
+            }, {
+                headers: {
+                    'accept': 'text/plain',
+                    'Content-Type': 'application/json-patch+json',
+                },
+            })).data
+
+            log(JSON.stringify(data), "sys", true);
+            if (data && data.length > 0) {
+                auction.sellPrice = data[0].lbin;
+                resolve(auction.sellPrice);
+                return
+            } else {
+                reject("No price data received");
+                return
+            }
+        } catch (error) {
+            reject(`Unable to reprice: ${error}`);
+        }
+    });
+}
 
 
 // async function handleSign(bot, price) {
@@ -256,12 +294,8 @@ async function handleList(bot, auction) {
 
 async function fetchProfile(bot) {
     try {
-        let data;
-        if (process.env.apiKey) {
-            ({ data } = await axios.get(`https://api.hypixel.net/v2/skyblock/profiles?uuid=${bot.info.id}&key=${process.env.apiKey}`));
-        } else {
-            ({ data } = await axios.get(`https://api.hypixel.net/v2/skyblock/profiles?uuid=${bot.info.id}&key=${config.apiKey}`));
-        }
+        const apiKey = process.env.apiKey ?? config.apiKey
+        const { data } = await axios.get(`https://api.hypixel.net/v2/skyblock/profiles?uuid=${bot.info.id}&key=${apiKey}`);
         const profile = data.profiles.find(profile => profile.selected);
         fs.writeFileSync('./profileData.json', JSON.stringify(profile, null, 2));
         return profile;
@@ -272,12 +306,8 @@ async function fetchProfile(bot) {
 }
 
 async function fetchAuctions(profile_id) {
-    let data;
-    if (process.env.apiKey) {
-        ({ data } = await axios.get(`https://api.hypixel.net/v2/skyblock/auction?profile=${profile_id}&key=${process.env.apiKey}`))
-        } else {
-            ({ data } = await axios.get(`https://api.hypixel.net/v2/skyblock/auction?profile=${profile_id}&key=${config.apiKey}`))
-        }
+    const apiKey = process.env.apiKey ?? config.apiKey
+    const { data } = await axios.get(`https://api.hypixel.net/v2/skyblock/auction?profile=${profile_id}&key=${apiKey}`)
     const auctions = data.auctions.filter(({claimed}) => !claimed)
     const claimableAuctions = auctions.filter(auction => auction.highest_bid_amount > 0 && auction.bin)
     const expiredAuctions = auctions.filter(auction => auction.end < Date.now() && auction.highest_bid_amount === 0 && auction.bin)
@@ -294,13 +324,8 @@ async function fetchCoop(profile) {
             log(`Skipping undefined uuid`, "warn")
             continue
         }
-        let data;
-        if (process.env.apiKey) {
-            ({data} = await axios.get(`https://api.hypixel.net/v2/skyblock/profiles?uuid=${coopMember}&key=${process.env.apiKey}`))
-        } else {
-            ({data} = await axios.get(`https://api.hypixel.net/v2/skyblock/profiles?uuid=${coopMember}&key=${config.apiKey}`))
-
-        }
+        const apiKey = process.env.apiKey ?? config.apiKey
+        const {data} = await axios.get(`https://api.hypixel.net/v2/skyblock/profiles?uuid=${coopMember}&key=${apiKey}`)
         if (data.profiles) {
             if (data.profiles.find(({profile_id}) => profile_id === profile.profile_id)) {
                 activeCount++

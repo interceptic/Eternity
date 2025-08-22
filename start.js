@@ -6,14 +6,20 @@ const { askUser } = require("./components/console");
 const { log, sleep } = require("./components/utils")
 const startTime = Date.now() 
 
-if(process.env.NODE_ENV === "main") {
-    handler(`${config.username}`); // entry point! :DDDDDDDD
-} else if (process.env.NODE_ENV === "dev") {
-    require('dotenv').config();
-    handler(process.env.username)
-} else {
-    console.error(`Unexpected environment: \`${process.env.npm_lifecycle_event}\` -- Should be \`start\` or \`dev\``)
-    process.exit(1)
+switch(process.env.NODE_ENV) {
+    case "main": {
+        handler(`${config.username}`);
+        break;
+    }
+    case "dev": {
+        require('dotenv').config();
+        handler(process.env.username)
+        break;
+    }
+    default: {
+        console.error(`Unexpected environment: \`${process.env.npm_lifecycle_event}\` -- Should be \`start\` or \`dev\``)
+        process.exit(1)
+    }
 }
 
 askUser() // handle console

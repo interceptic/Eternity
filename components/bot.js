@@ -71,16 +71,11 @@ class Unit {
             totalSlots: null,
             
         };
-        if (process.env.username) {
-            this.config = {
-                "listTime": process.env.listTime,
-                "roundToNearest": process.env.roundToNearest
-            }
-        } else {
-            this.config = {
-                "listTime": config.customization.listTime,
-                "roundToNearest": config.customization.roundToNearest
-            }
+        const listTime = process.env.listTime ?? config.customization.listTime;
+        const roundToNearest = process.env.roundToNearest ?? config.customization.roundToNearest;
+        this.config = {
+            "listTime": listTime,
+            "roundToNearest": roundToNearest
         }
         this.holding = {};
         this.claimCell = {}

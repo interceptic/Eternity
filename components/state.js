@@ -131,7 +131,7 @@ class DynamicState extends EventEmitter {
             case "claim": {
                 for(let auction of this.bot.claimPipeline) {
                     log(`Attempting to claim ${auction.item_name}`, "sys")
-                    claimAuction(this.bot, auction);
+                    await claimAuction(this.bot, auction);
                     await sleep(800);
                 }
                 delete this.bot.claimPipeline; // might want to make this.bot.claimPipeline = [] if issues in future
@@ -156,10 +156,11 @@ class DynamicState extends EventEmitter {
                 break;
             }
             case "relist": {
-                break; // going to sleep will work on later
+                // break; // going to sleep will work on later
                 log("Handling relist", "sys", true)
-                for(let s = 0; s < this.bot.expiredAuctions.length; s++) {
-                    await handleRelist(this.bot, this.bot.expiredAuctions[s]).catch(err => log(`Relist error detected: ${err}`, "warn"));
+                for(let s = 0; s < this.bot.relistPipeline.length; s++) {
+                    await claimItem(this.bot, this.bot.relistPipeline[s], "relist")
+                    .catch(err => log(`Relist error detected: ${err}`, "warn"));
                 }
             }
         }
