@@ -120,7 +120,7 @@ async function handleMessageEvent(message, bot) {
             } else {
                 embed = await bot.hook.embed(`https://sky.coflnet.com/auction/${id}`, `# Bought ${itemName} for ${bought[2]} coins!\n\nProfit: **${BMK(afterTaxProfit)}** | **${profitPercent}%** | **Tax: ${BMK(taxAmount)}**\nFinder: **${finder}** | Type: **${type}**\nSkipped window: **${skipped}**\nElapsed time: **${completeTime}ms** | TPM time: **${tpmTime}ms**`, "green")
             }
-            if (bot.listPipeline.length > 0 && bot.stats.activeSlots == bot.stats.totalSlots) {
+            if (bot.listPipeline.length > 0 && (bot.stats.activeSlots === bot.stats.totalSlots || bot.stats.activeSlots + bot.listPipeline.length >= bot.stats.totalSlots)) {
                 function addOrdinalSuffix(i) {
                     var j = i % 10,
                         k = i % 100;

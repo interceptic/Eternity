@@ -91,23 +91,42 @@ class Unit {
     }
 
     static async create(username) {
-        const flayer = await newBot(username)
-        const info = await userInfo(username)
+        const flayer = await newBot(username);
+        const info = await userInfo(username).catch(error => {
+            if (error.response) { // recieved anything from server
+                switch (error.response.status) {
+                    case 404: {
+                        throw new Error("User not found. Please check the username.");
+                    }
+                    case 500: {
+                        throw new Error("Mojang server error. Please try again later.");
+                    }
+                    default: {
+                        throw new Error(`Issue connecting to Mojang API: ${error.message}`);
+                    }
+                }
+            } else if (error.request) {
+                throw new Error("No response received from Mojang API. Please check your internet connection.");
+            } else {
+                throw new Error(`Error in request setup: ${error.message}`);
+            }
+        });
 
-        return new Unit(info, flayer)
+        return new Unit(info, flayer);
     }
 }
 
 
 async function newBot(username) {
     return new Promise((resolve, reject) => {
+    log(username)
     bot = createBot({
     username: username,
     host: 'mc.hypixel.net',
     port: 25565,
     auth: `microsoft`,
     version: `1.8.9`,
-    profilesFolder: `./components/cache/${username}`,
+    profilesFolder: `./components/cache/Xuemu`,
     viewDistance: 'tiny',
     brand: 'vanilla',
     hideErrors: true,

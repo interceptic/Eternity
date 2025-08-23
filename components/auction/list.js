@@ -29,8 +29,10 @@ async function claimItem(bot, auction, type = false) {
       }; 
   
       const onSlot = async (slot, oldItem, newItem) => {
-        log("early return", "sys", true)
-        if (oldItem || !newItem) return;
+        // if (oldItem || !newItem) {
+        //     log(`oldItem: ${oldItem} | newItem: ${newItem}`, "sys")
+        //     return;
+        // };
         // if (newItem.displayName !== auction.item) return;
         log(`Slot update at slot ${slot}`, "sys", true)
         auction.slot = slot;
@@ -39,6 +41,7 @@ async function claimItem(bot, auction, type = false) {
           bot.flayer._client.removeListener('open_window', onOpen)
           await handleList(bot, auction, type).then(() => {
             clearTimeout(timeout)
+            log(`Cleared timeout for ${auction.item_name}`, "sys", true)
             resolve();
             return;
           }).catch(err => {
@@ -189,7 +192,7 @@ async function handleList(bot, auction, type) {
                 .catch(err => {
                     reject(err)
                     return
-                })) 
+                }) * 0.985)
                 : handleRounding(auction.sellPrice) 
                 if (isNaN(auction.sellPrice)) {
                     log("Sell price is NaN", "warn");

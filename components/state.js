@@ -147,8 +147,10 @@ class DynamicState extends EventEmitter {
                         log(`No available slots, ${this.bot.listPipeline[s].item} remaining in queue. (${this.bot.listPipeline.length} items in queue)`)
                         break;
                     }
-                    log(`Attempting to list ${this.bot.listPipeline[s].item} for ${this.bot.listPipeline[s].sellPrice} (${this.bot.listPipeline[s].id})`, "sys")
-                    await claimItem(this.bot, this.bot.listPipeline[s])
+                    log(`Attempting to list ${this.bot.listPipeline[s].item_name} for ${this.bot.listPipeline[s].sellPrice} (${this.bot.listPipeline[s].uuid})`, "sys")
+                    await claimItem(this.bot, this.bot.listPipeline[s]).catch(err => {
+                        log(`List error detected: ${err}`, "warn")
+                    })
                     await sleep(800)
                     this.bot.listPipeline.splice(s, 1);
                     s--;
@@ -161,6 +163,7 @@ class DynamicState extends EventEmitter {
                 for(let s = 0; s < this.bot.relistPipeline.length; s++) {
                     await claimItem(this.bot, this.bot.relistPipeline[s], "relist")
                     .catch(err => log(`Relist error detected: ${err}`, "warn"));
+                    await sleep(700)
                 }
             }
         }

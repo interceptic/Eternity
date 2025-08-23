@@ -6,8 +6,10 @@ async function userInfo(username) {
             const response = await axios.get(`https://api.mojang.com/users/profiles/minecraft/${username}`);
             const { id, name } = response.data;
             resolve({ id, name });
+            return;
             } catch (error) {
-                reject(error);
+                reject(error)
+                return;
             }
         });
 }
