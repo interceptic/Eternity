@@ -80,7 +80,11 @@ async function handleMessageEvent(message, bot) {
         if (bought) {
             const itemName = bought[1];
             const boughtPrice = bought[2].replace(/,/g, ''); // number without commas (price)
-            const estimatedSellPrice = bot.holding[itemName][boughtPrice][0].target
+            if (!bot.holding[itemName] || !bot.holding[itemName][boughtPrice] || !bot.holding[itemName][boughtPrice][0]) {
+                console.log(bot.holding);
+                return;
+            }
+            const estimatedSellPrice = bot.holding[itemName][boughtPrice][0].target;
             log(JSON.stringify(bot.holding[itemName][boughtPrice][0]))
             const id = bot.holding[itemName][boughtPrice][0].id
             const completeTime = time - bot.holding[itemName][boughtPrice][0].recieveTime
@@ -113,13 +117,30 @@ async function handleMessageEvent(message, bot) {
                 bot.listPipeline = [];
             }
             bot.listPipeline.push({"item_name": itemName, "sellPrice": estimatedSellPrice, "uuid": id, "finder": finder});
-            let embed;
-            // bought[2] is price with commas
-            if(type === "Bed") {
-                embed = await bot.hook.embed(`https://sky.coflnet.com/auction/${id}`, `# Bought ${itemName} for ${bought[2]} coins!\n\nProfit: **${BMK(afterTaxProfit)}** | **${profitPercent}%** | **Tax: ${BMK(taxAmount)}**\nFinder: **${finder}** | Type: **${type}**\nSkipped window: **${skipped}**\nElapsed time: **${completeTime}ms**`, "green")
-            } else {
-                embed = await bot.hook.embed(`https://sky.coflnet.com/auction/${id}`, `# Bought ${itemName} for ${bought[2]} coins!\n\nProfit: **${BMK(afterTaxProfit)}** | **${profitPercent}%** | **Tax: ${BMK(taxAmount)}**\nFinder: **${finder}** | Type: **${type}**\nSkipped window: **${skipped}**\nElapsed time: **${completeTime}ms** | TPM time: **${tpmTime}ms**`, "green")
+            // let embed = type === "Bed" ? 
+            // await bot.hook.embed(`https://sky.coflnet.com/auction/${id}`, `# Bought ${itemName} for ${bought[2]} coins!\n\nProfit: **${BMK(afterTaxProfit)}** | **${profitPercent}%** | **Tax: ${BMK(taxAmount)}**\nFinder: **${finder}** | Type: **${type}**\nSkipped window: **${skipped}**\nElapsed time: **${completeTime}ms**`, "green")
+            // : 
+            // await bot.hook.embed(`https://sky.coflnet.com/auction/${id}`, `# Bought ${itemName} for ${bought[2]} coins!\n\nProfit: **${BMK(afterTaxProfit)}** | **${profitPercent}%** | **Tax: ${BMK(taxAmount)}**\nFinder: **${finder}** | Type: **${type}**\nSkipped window: **${skipped}**\nElapsed time: **${completeTime}ms** | TPM time: **${tpmTime}ms**`, "green")
+
+            let econString = "";
+            econString += `Target: **~${BMK(estimatedSellPrice, 1)}**\n`
+            econString += `Profit: **~${BMK(afterTaxProfit, 1)} (${profitPercent}%)**\n`
+            econString += `Tax: **~${BMK(taxAmount, 1)}**`
+
+            let statString = "";
+            statString += `Type: **${type}**\n`
+            statString += `Request Time: **${completeTime}ms**\n`
+            if (type !== "Bed") {
+                statString += `Window to Purchase: **${tpmTime}ms**\n`
+                statString += `Window Skip: **${skipped}**\n`
             }
+            statString += `Finder: **${finder}**`
+
+            // bought[2] is price with commas
+
+            let embed = await bot.hook.embed("Bought Auction!", `# Bought ${itemName} for ${bought[2]} coins!\n`, "green");
+            embed.setURL(`https://sky.coflnet.com/auction/${id}`)
+            embed.addFields({name: "Economics", value: econString, inline: true}, {name: "Statistics", value: statString, inline: true})
             if (bot.listPipeline.length > 0 && (bot.stats.activeSlots === bot.stats.totalSlots || bot.stats.activeSlots + bot.listPipeline.length >= bot.stats.totalSlots)) {
                 function addOrdinalSuffix(i) {
                     var j = i % 10,

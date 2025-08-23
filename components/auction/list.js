@@ -9,7 +9,7 @@ async function claimItem(bot, auction, type = false) {
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
             // cleanup();
-            reject("Timed out");
+            reject("Timeout Error | claimItem");
             return;
           }, 15000);
 
@@ -39,13 +39,12 @@ async function claimItem(bot, auction, type = false) {
         log("Slot event fired, starting list process...", "sys", true)
         try {
           bot.flayer._client.removeListener('open_window', onOpen)
+          clearTimeout(timeout)
           await handleList(bot, auction, type).then(() => {
-            clearTimeout(timeout)
             log(`Cleared timeout for ${auction.item_name}`, "sys", true)
             resolve();
             return;
           }).catch(err => {
-            clearTimeout(timeout)
             reject(err)
             return;
           });
@@ -83,8 +82,9 @@ async function handleList(bot, auction, type) {
     return new Promise((resolve, reject) => {
         const timeout = setTimeout(() => {
             cleanup();
-            resolve();
-          }, 15000);
+            reject("Timeout Error | handleList");
+            return;
+          }, 20000);
       const cleanup = () => {
         clearTimeout(timeout);
         bot.flayer._client.removeListener('open_window', onWindow)};
@@ -133,24 +133,26 @@ async function handleList(bot, auction, type) {
             break;
           case title.includes("Create BIN Auction"):
             if (paid && time) {
-            await new Promise((resolve, reject) => {
-                const checkPriceSlot = () => {
-                    const priceSlot = bot.flayer.currentWindow.slots[31]?.nbt?.value?.display?.value?.Name?.value;
-                    if (!priceSlot.replace(/,/g, '').includes(`${auction.sellPrice}`)) {
-                        log(`Expected list price failed ${priceSlot}`, "sys", true)
-                        reject("Price mismatch")
-                        return
-                    } else {
-                        clearInterval(interval);
-                        resolve();
-                    }
-                };
-                const interval = setInterval(checkPriceSlot, 250);
-                setTimeout(() => clearInterval(interval), 500); // stop checking after 500 ms
-            }).catch(err => {
-                log(`Failed to list: ${err}`, "warn")
-                return;
-            })
+                try {
+                    await new Promise((resolve, reject) => {
+                        const checkPriceSlot = () => {
+                            const priceSlot = bot.flayer.currentWindow.slots[31]?.nbt?.value?.display?.value?.Name?.value;
+                            if (!priceSlot.replace(/,/g, '').includes(`${auction.sellPrice}`)) {
+                                log(`Expected list price failed ${priceSlot}`, "sys", true)
+                                reject("Price mismatch")
+                                return;
+                            } else {
+                                clearInterval(interval);
+                                resolve();
+                            }
+                        };
+                        const interval = setInterval(checkPriceSlot, 250);
+                        setTimeout(() => clearInterval(interval), 500);
+                    });
+                } catch (err) {
+                    log(`Failed to list: ${err}`, "warn");
+                    return; 
+                }
             setMessageListener(bot, auction, window)
             bot.packets.click(29, window.windowId, -1);
             log("Clicked confirm list...", "sys", true)

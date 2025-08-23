@@ -45,7 +45,7 @@ function handleMessageEvent(bot, price, tag, latestItem, latestPrice) {
         }
     }
     bot.flayer.on('message', messageListener);
-    const timeout = setTimeout(() => bot.flayer.removeListener('message', messageListener), 300);
+    const timeout = setTimeout(() => bot.flayer.removeListener('message', messageListener), 600);
 }
 
 async function buy(bot) {
@@ -92,11 +92,10 @@ async function buy(bot) {
                 let slot = await load(bot.flayer.currentWindow, 11)
                 log("Slot 11 loaded!", "sys", true)
                 let count = 0;
-                while (bot.flayer.currentWindow && count < 3) {
+                while (bot.flayer.currentWindow && count < 2) {
                 bot.betterClick(11, 0, 0);
                 log(`recognizing click at time ${Date.now() - confirmWindow}ms`, "sys")                
                 count++;
-                await waitForTicks(bot, 1)
                 }
                 
                 

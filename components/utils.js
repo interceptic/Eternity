@@ -60,16 +60,16 @@ function sleep(ms) {
 
 // Represents integers such as 123102 as 123.1k or 3134013 as 3.14m
 
-function BMK(num) {
+function BMK(num, additionalDecimalPoints = 0 ) {
     let negative = num < 0;
     num = Math.abs(num);
     let thingy;
     if (num >= 1000000000) {
-        thingy = (num / 1000000000).toFixed(1) + 'B';
+        thingy = (num / 1000000000).toFixed(1 + additionalDecimalPoints) + 'B';
     } else if (num >= 1000000) {
-        thingy = (num / 1000000).toFixed(1) + 'M';
+        thingy = (num / 1000000).toFixed(1 + additionalDecimalPoints) + 'M';
     } else if (num >= 1000) {
-        thingy = (num / 1000).toFixed(1) + 'K';
+        thingy = (num / 1000).toFixed(1 + additionalDecimalPoints) + 'K';
     } else {
         thingy = num.toString();
     }

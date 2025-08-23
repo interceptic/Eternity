@@ -73,6 +73,7 @@ class DynamicState extends EventEmitter {
                     this.bot.flayer.on('message', this.messageListener);
                     if (this.bot.auctionPipeline.length > 0) {
                         const auction = this.bot.auctionPipeline[0]
+                        this.bot.waiting = false;
                         this.bot.latestItem = auction.itemName.replace(/§[0-9a-fk-or]/g, '');
                         this.bot.latestPrice = auction.startingBid
                         this.bot.chat(`/viewauction ${auction.id}`);
@@ -80,7 +81,6 @@ class DynamicState extends EventEmitter {
                         log(`Time to send message:  ${Date.now() - auction.recieveTime}ms`, "sys")
                         this.bot.recieveTime = auction.recieveTime;
                         this.bot.auctionPipeline.shift();
-                        this.bot.waiting = false;
                     } else {
                         this.bot.waiting = true; // waiting for next flip if it doesnt have an item in pipeline
                     }
@@ -134,7 +134,7 @@ class DynamicState extends EventEmitter {
                     await claimAuction(this.bot, auction);
                     await sleep(800);
                 }
-                delete this.bot.claimPipeline; // might want to make this.bot.claimPipeline = [] if issues in future
+                this.bot.claimPipeline = []; // might want to make this.bot.claimPipeline = [] if issues in future
                 break;
             }
             case "list": {

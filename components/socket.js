@@ -44,6 +44,7 @@ class Socket {
                             this.bot.state.emit("addToQueue", "buy", true)
                         }
                         if(this.bot.waiting) {
+                            log("bot is considerded to be waiting for next flip")
                             this.bot.state.emit("nextFlip");
                         }
                         const cleanName = data.itemName.replace(/§[0-9a-fk-or]/g, '');
@@ -57,24 +58,25 @@ class Socket {
                         
                         if(data.tag.slice(0,3) === "PET") {
                             data.tag = "PET";
+                        } else if(data.tag.slice(0,4) === "RUNE") {
+                            data.tag = "RUNE";
                         }
-
                         if(!this.bot.holding[data.startingBid] || !this.bot.holding[data.startingBid][data.tag]) {
                             this.bot.holding[data.startingBid] = {}
                             this.bot.holding[data.startingBid][data.tag] = []
                         }
                         this.bot.holding[data.startingBid][data.tag].push({"type": "Unknown", "tpmTime": 0})
                         // after 15 seconds and flip isnt bought it will remove from array (ONLY IF ALL OTHER CHECKS DONT PASS)
-                        setTimeout(() => {
-                            try {
-                            if (this.bot.holding[cleanName][data.startingBid][0]?.uuid === specificUUID) {
-                                this.bot.holding[cleanName][data.startingBid].shift()
-                            }
-                            } catch (error) {
-                                //ignore error
-                            }
-                            delete this.bot.holding[data.tag];
-                        }, 15000);
+                        // setTimeout(() => {
+                        //     try {
+                        //     if (this.bot.holding[cleanName][data.startingBid][0]?.uuid === specificUUID) {
+                        //         this.bot.holding[cleanName][data.startingBid].shift()
+                        //     }
+                        //     } catch (error) {
+                        //         //ignore error
+                        //     }
+                        //     delete this.bot.holding[data.tag];
+                        // }, 15000);
                         break;
                     case "chatMessage":
                         if (data[1] && data[1]["text"]) {
