@@ -41,7 +41,7 @@ async function handleMessageEvent(message, bot) {
         
         if (claim) {
             log("claimed message recieved", "sys", true)
-            log(JSON.stringify(bot.holding), "sys", true);
+            log(JSON.stringify(bot.claimCell), "sys", true);
             const price = claim[1]
             const itemName = claim[2]
             const username = claim[3]

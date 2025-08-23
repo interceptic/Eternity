@@ -91,7 +91,9 @@ class Unit {
     }
 
     static async create(username) {
-        const flayer = await newBot(username);
+        const flayer = await newBot(username).catch(error => {
+            throw new Error(`Unable to create unit: ${error}`)
+        });
         const info = await userInfo(username).catch(error => {
             if (error.response) { // recieved anything from server
                 switch (error.response.status) {
@@ -119,23 +121,29 @@ class Unit {
 
 async function newBot(username) {
     return new Promise((resolve, reject) => {
-    log(username)
-    bot = createBot({
-    username: username,
-    host: 'mc.hypixel.net',
-    port: 25565,
-    auth: `microsoft`,
-    version: `1.8.9`,
-    profilesFolder: `./components/cache/Xuemu`,
-    viewDistance: 'tiny',
-    brand: 'vanilla',
-    hideErrors: true,
-    onMsaCode: (code) => {
-        log(`Please login to the microsoft account associated with your minecraft account using the code ${code.user_code} at https://www.microsoft.com/link`, "sys");
-    }
-  })
-  resolve(bot);
-})}
+    try {
+        bot = createBot({
+            username: username,
+            host: 'mc.hypixel.net',
+            port: 25565,
+            auth: `microsoft`,
+            version: `1.8.9`,
+            profilesFolder: `./components/cache/${username}`,
+            viewDistance: 'tiny',
+            brand: 'vanilla',
+            hideErrors: true,
+            onMsaCode: (code) => {
+                log(`Please login to the microsoft account associated with your minecraft account using the code ${code.user_code} at https://www.microsoft.com/link`, "sys");
+            }
+        })
+        resolve(bot);
+        return;
+        } catch (error) {
+            reject(error);
+            return;
+        }
+    })
+}
 
 // never used yayayay, i will make this work later so all my purse logic works at a later date
 async function extractInfo(bot) {

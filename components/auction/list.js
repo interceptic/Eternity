@@ -199,6 +199,7 @@ async function handleList(bot, auction, type) {
                     reject("NaN error")
                     return;
                 }
+                Math.floor(auction.sellPrice) // just incase we have a decimal
                 bot.packets.click(auction.slot + bot.flayer.currentWindow.slots.length - 45, window.windowId, -1);
                 await sleep(400)
 
@@ -236,8 +237,48 @@ async function handleList(bot, auction, type) {
 
 
 function handleRounding(price) {
-    return Math.round((price / 10000)) * 10000
+    if (price < 10_000) {
+        return price
+    } else if (price < 100_000) {
+        return Math.floor(price / 10) * 10
+    } else if (price < 1_000_000) {
+        return Math.floor((price / 100)) * 100
+    } else if (price < 10_000_00) {
+        return Math.floor((price / 1000)) * 1000
+    } else if (price >= 10_000_00) {
+        return Math.floor((price / 10000)) * 10000
+    } else {
+        return NaN; // calculations broke
+    }
 }
+
+
+function checkDeviation(data) {
+    const median = data[0]?.median;
+    const lbin = data[0]?.lbin;
+
+    if (lbin <= 0) {
+        return { ignoreList: false, fallBack: true };
+    }
+
+    // Higher number = more deviation (might remove in future)
+    if (median / lbin >= 4) {
+        return {"ignoreList": true, "fallBack": false}
+    } else if ((median > 2_500_000 && median < 10_000_000) && median / lbin >= 2) {
+        return {"ignoreList": false, "fallBack": true}
+    }  else if ((median >= 10_000_000 && median < 25_000_000) && median / lbin >= 1.70) {
+        return {"ignoreList": false, "fallBack": true}
+    } else if ((median >= 25_000_000 && median < 100_000_000) && median / lbin >= 1.53) {
+        return {"ignoreList": false, "fallBack": true}
+    } else if ((median >= 100_000_000 && median < 250_000_000) && median / lbin >= 1.40) {
+        return {"ignoreList": false, "fallBack": true}
+    } else if (median >= 250_000_000 && median / lbin >= 1.30) {
+        return {"ignoreList": false, "fallBack": true}
+    } else {
+        return {"ignoreList": false, "fallBack": false}
+    }
+}
+
 
 async function getNewPrice(bot, auction) {
     return new Promise(async (resolve, reject) => {
@@ -261,9 +302,18 @@ async function getNewPrice(bot, auction) {
 
             log(JSON.stringify(data), "sys", true);
             if (data && data.length > 0) {
-                auction.sellPrice = data[0].lbin;
+                const { ignoreList, fallBack } = checkDeviation(data);
+                if(ignoreList) {
+                    reject(`Ignoring relist of ${auction.item_name} | Deviation mismatch`);
+                    return;
+                }
+                if (fallBack) {
+                    auction.sellPrice = data[0].median;
+                } else {
+                    auction.sellPrice = data[0].lbin;
+                }
                 resolve(auction.sellPrice);
-                return
+                return;
             } else {
                 reject("No price data received");
                 return
