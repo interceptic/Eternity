@@ -140,7 +140,7 @@ class DynamicState extends EventEmitter {
             case "list": {
                 for(let s = 0; s < this.bot.listPipeline.length; s++) {
                     if (this.bot.stats.activeSlots === this.bot.stats.totalSlots) {
-                        log(`No available slots, ${this.bot.listPipeline[s].item} remaining in queue. (${this.bot.listPipeline.length} items in queue)`)
+                        log(`No available slots, ${this.bot.listPipeline[s].item_name} remaining in queue. (${this.bot.listPipeline.length} items in queue)`)
                         break;
                     }
                     if (this.bot.listPipeline[s].finder.toLowerCase().includes("user")) {
@@ -179,19 +179,15 @@ class DynamicState extends EventEmitter {
                     const currentItem = this.bot.relistPipeline[s];
                     try {
                         await claimItem(this.bot, currentItem, "relist");
-                        this.bot.relistPipeline.splice(s, 1);
-                        s--;
                         log(`Successfully relisted ${currentItem.item_name}`, "sys");
                     } catch (err) {
                         log(`Relist error detected for ${currentItem.item_name}: ${err}`, "warn");
-                        log(`Removing ${currentItem.item_name} from relist pipeline due to permanent error`, "warn");
-                        const embed = await this.bot.hook.embed("Failed to Relist", `Not listing **${this.bot.listPipeline[s].item}** | \`${err}\``, "red")
-                        embed.setURL(`https://sky.coflnet.com/auction/${this.bot.listPipeline[s].uuid}`)
+                        const embed = await this.bot.hook.embed("Failed to Relist", `Not listing **${currentItem.item_name}** | \`${err}\``, "red")
+                        embed.setURL(`https://sky.coflnet.com/auction/${currentItem.uuid}`)
                         await this.bot.hook.send(embed)
-                        this.bot.relistPipeline.splice(s, 1);
-                        s--;
-                
                     }
+                    this.bot.relistPipeline.splice(s, 1);
+                    s--;
                     await sleep(700);
                 }
             }

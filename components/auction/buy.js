@@ -47,7 +47,7 @@ function handleMessageEvent(bot, price, tag, latestItem, latestPrice) {
         }
     }
     bot.flayer.on('message', messageListener);
-    const timeout = setTimeout(() => bot.flayer.removeListener('message', messageListener), 600);
+    const timeout = setTimeout(() => bot.flayer.removeListener('message', messageListener), 500);
 }
 
 async function buy(bot) {

@@ -58,6 +58,7 @@ async function claimItem(bot, auction, type = false) {
         } catch (e) {
             clearTimeout(timeout)
             reject(e);
+            return
         }
       };
   
@@ -288,6 +289,13 @@ async function handleList(bot, auction, type) {
 
             embed.setURL(`https://sky.coflnet.com/auction/${auction.uuid}`)
             await bot.hook.send(embed)
+            let relistTime = (process.env.listTime ?? bot.config.listTime).toString()
+            const auctionExpiration = (((relistTime * 60) * 60) * 1000) // hour to ms
+            setTimeout(() => {
+                log(`Adding relist of ${auction.item_name} to queue!`, "sys");
+
+            }, 15000 + auctionExpiration); 
+
             cleanup();
             resolve();
             break;
@@ -368,7 +376,7 @@ async function getNewPrice(bot, auction) {
             if (data && data.length > 0) {
                 const { ignoreList, fallBack } = checkDeviation(data);
                 if(ignoreList) {
-                    reject(`Ignoring relist of ${auction.item_name} | Deviation mismatch`);
+                    reject(`Ignoring relist of ${auction.item_name} | Deviation Mismatch`);
                     return;
                 }
                 if (fallBack) {

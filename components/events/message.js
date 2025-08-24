@@ -82,6 +82,7 @@ async function handleMessageEvent(message, bot) {
             const boughtPrice = bought[2].replace(/,/g, ''); // number without commas (price)
             if (!bot.holding[itemName] || !bot.holding[itemName][boughtPrice] || !bot.holding[itemName][boughtPrice][0]) {
                 console.log(bot.holding);
+                log("Failed to handle bought auction! Please report this!", "sys")
                 return;
             }
             const estimatedSellPrice = bot.holding[itemName][boughtPrice][0].target;
@@ -116,7 +117,6 @@ async function handleMessageEvent(message, bot) {
             if(!bot.listPipeline) {
                 bot.listPipeline = [];
             }
-            bot.listPipeline.push({"item_name": itemName, "sellPrice": estimatedSellPrice, "uuid": id, "finder": finder});
             // let embed = type === "Bed" ? 
             // await bot.hook.embed(`https://sky.coflnet.com/auction/${id}`, `# Bought ${itemName} for ${bought[2]} coins!\n\nProfit: **${BMK(afterTaxProfit)}** | **${profitPercent}%** | **Tax: ${BMK(taxAmount)}**\nFinder: **${finder}** | Type: **${type}**\nSkipped window: **${skipped}**\nElapsed time: **${completeTime}ms**`, "green")
             // : 
@@ -137,11 +137,11 @@ async function handleMessageEvent(message, bot) {
             statString += `Finder: **${finder}**`
 
             // bought[2] is price with commas
-
+            bot.listPipeline.push({"item_name": itemName, "sellPrice": estimatedSellPrice, "uuid": id, "finder": finder});
             let embed = await bot.hook.embed("Bought Auction!", `# Bought ${itemName} for ${bought[2]} coins!\n`, "green");
             embed.setURL(`https://sky.coflnet.com/auction/${id}`)
             embed.addFields({name: "Economics", value: econString, inline: true}, {name: "Statistics", value: statString, inline: true})
-            if (bot.listPipeline.length > 0 && (bot.stats.activeSlots === bot.stats.totalSlots || bot.stats.activeSlots + bot.listPipeline.length >= bot.stats.totalSlots)) {
+            if (bot.listPipeline.length > 0 && (bot.stats.activeSlots === bot.stats.totalSlots || bot.stats.activeSlots + bot.listPipeline.length > bot.stats.totalSlots)) {
                 function addOrdinalSuffix(i) {
                     var j = i % 10,
                         k = i % 100;
@@ -156,9 +156,9 @@ async function handleMessageEvent(message, bot) {
                     }
                     return i + "th";
                 }
-                embed.addFields({name: "Auction House Full", value: `All slots are currently active...\n**This item is ${addOrdinalSuffix(bot.listPipeline.length)} in queue.**`, inline: false})
+                const queue = bot.stats.activeSlots === bot.stats.totalSlots ? bot.listPipeline.length : bot.stats.activeSlots + bot.listPipeline.length - bot.totalSlots
+                embed.addFields({name: "Auction House Full", value: `All slots are currently active...\n**This item is ${addOrdinalSuffix(queue)} in queue.**`, inline: false})
             }
-            
             await bot.hook.send(embed)
 
             bot.state.emit("addToQueue", "list")
