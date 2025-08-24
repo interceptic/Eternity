@@ -6,6 +6,13 @@ const { log, sleep } = require("../utils")
 const { load } = require("./buy")
 
 async function claimItem(bot, auction, type = false) {
+    // Safety check to ensure auction object is valid
+    if (!auction || !auction.item_name || !auction.uuid) {
+        throw new Error(`Invalid auction object: ${JSON.stringify(auction)}`);
+    }
+    
+    log(`Starting claimItem for ${auction.item_name} with price ${auction.sellPrice} (type: ${type})`, "sys", true);
+    
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
             // cleanup();
@@ -79,6 +86,13 @@ async function claimItem(bot, auction, type = false) {
     // })
 //   }
 async function handleList(bot, auction, type) {
+    // Validate auction object at the start
+    if (!auction || !auction.item_name || !auction.uuid) {
+        throw new Error(`Invalid auction object in handleList: ${JSON.stringify(auction)}`);
+    }
+    
+    log(`Starting handleList for ${auction.item_name} with price ${auction.sellPrice} (type: ${type})`, "sys", true);
+    
     return new Promise((resolve, reject) => {
         const timeout = setTimeout(() => {
             cleanup();
@@ -137,20 +151,31 @@ async function handleList(bot, auction, type) {
                     await new Promise((resolve, reject) => {
                         const checkPriceSlot = () => {
                             const priceSlot = bot.flayer.currentWindow.slots[31]?.nbt?.value?.display?.value?.Name?.value;
-                            if (!priceSlot.replace(/,/g, '').includes(`${auction.sellPrice}`)) {
-                                log(`Expected list price failed ${priceSlot}`, "sys", true)
+                            const expectedPrice = auction.sellPrice.toString();
+                            const actualPrice = priceSlot.replace(/,/g, '');
+                            
+                            log(`Checking price slot - Expected: ${expectedPrice}, Actual: ${actualPrice}`, "sys", true);
+                            
+                            if (!actualPrice.includes(expectedPrice)) {
+                                log(`Expected list price failed ${priceSlot}`, "sys", true);
+                                log(`Price mismatch detected for ${auction.item_name} - Expected: ${expectedPrice}, Got: ${actualPrice}`, "warn");
                                 reject("Price mismatch")
                                 return;
                             } else {
+                                log(`Price validation successful for ${auction.item_name}: ${expectedPrice}`, "sys", true);
                                 clearInterval(interval);
                                 resolve();
                             }
                         };
                         const interval = setInterval(checkPriceSlot, 250);
-                        setTimeout(() => clearInterval(interval), 500);
+                        setTimeout(() => {
+                            clearInterval(interval);
+                            reject("Price validation timeout");
+                        }, 5000);
                     });
                 } catch (err) {
                     log(`Failed to list: ${err}`, "warn");
+                    reject(err);
                     return; 
                 }
             setMessageListener(bot, auction, window)
@@ -190,18 +215,43 @@ async function handleList(bot, auction, type) {
                   bot.packets.click(13, window.windowId, -1);
                   await sleep(300);
                 }
-                auction.sellPrice = type ? handleRounding(await getNewPrice(bot, auction)
-                .catch(err => {
-                    reject(err)
-                    return
-                }) * 0.985)
-                : handleRounding(auction.sellPrice) 
-                if (isNaN(auction.sellPrice)) {
-                    log("Sell price is NaN", "warn");
-                    reject("NaN error")
+                
+                // Validate auction object before price calculation
+                if (!auction || !auction.item_name || !auction.uuid) {
+                    throw new Error(`Auction object corrupted during listing process: ${JSON.stringify(auction)}`);
+                }
+                
+                log(`Processing price for ${auction.item_name} (UUID: ${auction.uuid})`, "sys", true);
+                
+                // Calculate the final price based on type
+                let finalPrice;
+                if (type) {
+                    // For relist items, get new price from API
+                    log(`Getting new price for relist item: ${auction.item_name}`, "sys", true);
+                    const newPrice = await getNewPrice(bot, auction)
+                        .catch(err => {
+                            log(`Failed to get new price: ${err}`, "warn");
+                            reject(err)
+                            return
+                        });
+                    finalPrice = handleRounding(newPrice * 0.985);
+                    log(`New price from API: ${newPrice}, after rounding and discount: ${finalPrice}`, "sys", true);
+                } else {
+                    // For regular items, use existing price
+                    log(`Using existing price for item: ${auction.item_name} - ${auction.sellPrice}`, "sys", true);
+                    finalPrice = handleRounding(auction.sellPrice);
+                }
+                
+                // Validate the price
+                if (isNaN(finalPrice) || finalPrice <= 0) {
+                    log(`Invalid price calculated: ${finalPrice} for item ${auction.item_name}`, "warn");
+                    reject("Invalid price error")
                     return;
                 }
-                Math.floor(auction.sellPrice) // just incase we have a decimal
+                
+                // Set the final price
+                auction.sellPrice = Math.floor(finalPrice);
+                log(`Final price set for ${auction.item_name}: ${auction.sellPrice}`, "sys", true);
                 bot.packets.click(auction.slot + bot.flayer.currentWindow.slots.length - 45, window.windowId, -1);
                 await sleep(400)
 
@@ -223,9 +273,21 @@ async function handleList(bot, auction, type) {
             await sleep(200);
             bot.packets.click(11, window.windowId, -1);
 
-            let embed = await bot.hook.embed("Listed Auction!", `Listed ${auction.item_name} for \`${auction.sellPrice.toLocaleString()}\` coins!`, "lightBlue");
+            let embed;
+            if (type) { // if it isnt relisting (basically so it doesnt count one item for double the slots it should)
+                baseString = ``;
+                baseString += `Listed ${auction.item_name} for \`${auction.sellPrice.toLocaleString()}\` coins!\n`;
+                if (auction.data) {
+                    baseString += `**[WARNING]** Item was relisted using median | deviation of median / lbin was ${(auction.sellPrice / auction.data.lbin).toFixed(2)} (LBIN: ${auction.data.lbin})`
+                }
+                embed = await bot.hook.embed("Relisted Auction!", baseString, "lightBlue");
+            } else {
+                bot.stats.activeSlots++;
+                embed = await bot.hook.embed("Listed Auction!", `Listed ${auction.item_name} for \`${auction.sellPrice.toLocaleString()}\` coins!`, "lightBlue");
+            }
+
+            embed.setURL(`https://sky.coflnet.com/auction/${auction.uuid}`)
             await bot.hook.send(embed)
-            bot.stats.activeSlots++;
             cleanup();
             resolve();
             break;
@@ -310,7 +372,9 @@ async function getNewPrice(bot, auction) {
                     return;
                 }
                 if (fallBack) {
+                    log("Switching to median price", "sys")
                     auction.sellPrice = data[0].median;
+                    auction.data = {"lbin": data[0].lbin}
                 } else {
                     auction.sellPrice = data[0].lbin;
                 }
@@ -403,7 +467,7 @@ async function setMessageListener(bot, auction, window) {
         if (position === "game_info") return;
         if (message.toAnsi().toLowerCase().includes("don't have enough coins")) {
             bot.flayer.closeWindow(window);
-            const embed = await bot.hook.embed(`Unable to list ${auction.item}`, `**${auction.item} is too expensive for you to list :(**`, "red");
+            const embed = await bot.hook.embed(`Unable to list ${auction.item_name}`, `**${auction.item_name} is too expensive for you to list :(**`, "red");
             await bot.hook.send(embed);
         }
     };

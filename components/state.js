@@ -139,31 +139,60 @@ class DynamicState extends EventEmitter {
             }
             case "list": {
                 for(let s = 0; s < this.bot.listPipeline.length; s++) {
-                    if (this.bot.listPipeline[s].finder.toLowerCase().includes("user")) {
-                        log(`Not lising ${this.bot.listPipeline[s].item} | Item found by user filter`, "sys")
-                        continue;
-                    }
                     if (this.bot.stats.activeSlots === this.bot.stats.totalSlots) {
                         log(`No available slots, ${this.bot.listPipeline[s].item} remaining in queue. (${this.bot.listPipeline.length} items in queue)`)
                         break;
                     }
-                    log(`Attempting to list ${this.bot.listPipeline[s].item_name} for ${this.bot.listPipeline[s].sellPrice} (${this.bot.listPipeline[s].uuid})`, "sys")
-                    await claimItem(this.bot, this.bot.listPipeline[s]).catch(err => {
-                        log(`List error detected: ${err}`, "warn")
-                    })
-                    await sleep(800)
-                    this.bot.listPipeline.splice(s, 1);
-                    s--;
+                    if (this.bot.listPipeline[s].finder.toLowerCase().includes("user")) {
+                        log(`Not listing ${this.bot.listPipeline[s].item} | Item found by user filter`, "sys")
+                        const embed = await this.bot.hook.embed("Failed to List", `Not listing **${this.bot.listPipeline[s].item}** | Found by User Finder`, "white")
+                        embed.setURL(`https://sky.coflnet.com/auction/${this.bot.listPipeline[s].uuid}`)
+                        await this.bot.hook.send(embed)
+                        this.bot.listPipeline.splice(s, 1);
+                        s--;
+                        continue;
+                    }
+                    const currentItem = this.bot.listPipeline[s];
+                    log(`Attempting to list ${currentItem.item_name} for ${currentItem.sellPrice} (${currentItem.uuid})`, "sys")
+                    
+                    try {
+                        await claimItem(this.bot, currentItem);
+                        this.bot.listPipeline.splice(s, 1);
+                        s--; // Adjust index since we removed an element
+                        log(`Successfully listed ${currentItem.item_name}`, "sys");
+                    } catch (err) {
+                        log(`List error detected for ${currentItem.item_name}: ${err}`, "warn");
+                        log(`Removing ${currentItem.item_name} from pipeline due to permanent error`, "warn");
+                        const embed = await this.bot.hook.embed("Failed to List", `Not listing **${this.bot.listPipeline[s].item}** | \`${err}\``, "red")
+                        embed.setURL(`https://sky.coflnet.com/auction/${this.bot.listPipeline[s].uuid}`)
+                        await this.bot.hook.send(embed)
+                        this.bot.listPipeline.splice(s, 1);
+                        s--;     
+                    }
+                    await sleep(800);
                 }
                 break;
             }
             case "relist": {
-                // break; // going to sleep will work on later
                 log("Handling relist", "sys", true)
                 for(let s = 0; s < this.bot.relistPipeline.length; s++) {
-                    await claimItem(this.bot, this.bot.relistPipeline[s], "relist")
-                    .catch(err => log(`Relist error detected: ${err}`, "warn"));
-                    await sleep(700)
+                    const currentItem = this.bot.relistPipeline[s];
+                    try {
+                        await claimItem(this.bot, currentItem, "relist");
+                        this.bot.relistPipeline.splice(s, 1);
+                        s--;
+                        log(`Successfully relisted ${currentItem.item_name}`, "sys");
+                    } catch (err) {
+                        log(`Relist error detected for ${currentItem.item_name}: ${err}`, "warn");
+                        log(`Removing ${currentItem.item_name} from relist pipeline due to permanent error`, "warn");
+                        const embed = await this.bot.hook.embed("Failed to Relist", `Not listing **${this.bot.listPipeline[s].item}** | \`${err}\``, "red")
+                        embed.setURL(`https://sky.coflnet.com/auction/${this.bot.listPipeline[s].uuid}`)
+                        await this.bot.hook.send(embed)
+                        this.bot.relistPipeline.splice(s, 1);
+                        s--;
+                
+                    }
+                    await sleep(700);
                 }
             }
         }

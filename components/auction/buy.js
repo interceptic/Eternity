@@ -29,7 +29,9 @@ function handleMessageEvent(bot, price, tag, latestItem, latestPrice) {
         const listenerMessage = message.toAnsi()
         if (listenerMessage.includes("Putting coins in escrow...") && !checked) {
             log(bot.holding[price][tag][0]["tpmTime"])
+            if (bot.holding[price][tag][0]["tpmTime"] > 10000)  {// if not already processed 
             bot.holding[price][tag][0]["tpmTime"] = Date.now() - bot.holding[price][tag][0]["tpmTime"]
+            }
             checked = true;
         }
         // if purchased comes first just skip
