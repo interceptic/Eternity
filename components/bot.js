@@ -86,6 +86,7 @@ class Unit {
         this.lastAction = Date.now();
         this.stallCalls = 0;
         this.intervals = []; // store interval IDs for cleanup
+        this.listIntervals = []
         this.lastTickTime = 0;
         this.auctionPipeline = [];
     }

@@ -1,5 +1,3 @@
-const { BMK } = require('../utils')
-
 async function extractPurse(bot) {
     let purse;
     let scoreboard = bot.flayer?.scoreboard?.sidebar?.items?.map(item => item?.displayName?.getText(null)?.replace(item?.name, ''));
@@ -10,7 +8,7 @@ async function extractPurse(bot) {
             purse = parseInt(purseString.replace(/\D/g, ''), 10);
         }
     });
-    return BMK(purse);
+    return purse;
 }
 
 module.exports = { extractPurse }

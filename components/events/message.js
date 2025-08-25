@@ -49,7 +49,7 @@ async function handleMessageEvent(message, bot) {
             bot.stats.activeSlots--;
             await new Promise(resolve => setTimeout(resolve, 1200))
             purse = await extractPurse(bot);
-            embed.setFooter({text: `Eternity | ${purse} Coin Purse`, iconURL: "https://cdn.discordapp.com/attachments/1340811695769124914/1341163186715623474/image_1.png?ex=67b4ff0d&is=67b3ad8d&hm=26a2179b1f7709cf56aa0dfe713ea8049bc2c91857d9e03b343dab44f52ad693&"})
+            embed.setFooter({text: `Eternity | ${BMK(purse, 1)} Coin Purse`, iconURL: "https://cdn.discordapp.com/attachments/1340811695769124914/1341163186715623474/image_1.png?ex=67b4ff0d&is=67b3ad8d&hm=26a2179b1f7709cf56aa0dfe713ea8049bc2c91857d9e03b343dab44f52ad693&"})
             await bot.hook.send(embed)
         }
         
@@ -156,7 +156,7 @@ async function handleMessageEvent(message, bot) {
                     }
                     return i + "th";
                 }
-                const queue = bot.stats.activeSlots === bot.stats.totalSlots ? bot.listPipeline.length : bot.stats.activeSlots + bot.listPipeline.length - bot.totalSlots
+                const queue = bot.stats.activeSlots === bot.stats.totalSlots ? bot.listPipeline.length : bot.stats.activeSlots + bot.listPipeline.length - bot.stats.totalSlots
                 embed.addFields({name: "Auction House Full", value: `All slots are currently active...\n**This item is ${addOrdinalSuffix(queue)} in queue.**`, inline: false})
             }
             await bot.hook.send(embed)

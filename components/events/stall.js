@@ -83,6 +83,12 @@ async function restartBot(bot, reason) {
                     clearInterval(intervalId);
                 });
             }
+
+            if (bot.listIntervals) {
+                bot.intervals.forEach(intervalId => {
+                    clearInterval(intervalId);
+                });
+            }
             
             // wait for clean
             await new Promise(resolve => setTimeout(resolve, 4000))

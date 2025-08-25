@@ -2,8 +2,9 @@
 const axios = require('axios');
 const fs = require('fs');
 const config = JSON.parse(fs.readFileSync('./config.json', 'utf8'));
-const { log, sleep } = require("../utils")
-const { load } = require("./buy")
+const { log, sleep, BMK } = require("../utils")
+const { load } = require("./buy");
+const { extractPurse } = require('../info/purse');
 
 async function claimItem(bot, auction, type = false) {
     // Safety check to ensure auction object is valid
@@ -15,7 +16,8 @@ async function claimItem(bot, auction, type = false) {
     
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
-            // cleanup();
+            bot.flayer._client.removeListener('open_window', onOpen)
+            bot.flayer.inventory.removeListener('updateSlot', onSlot)
             reject("Timeout Error | claimItem");
             return;
           }, 15000);
@@ -275,26 +277,29 @@ async function handleList(bot, auction, type) {
             bot.packets.click(11, window.windowId, -1);
 
             let embed;
-            if (type) { // if it isnt relisting (basically so it doesnt count one item for double the slots it should)
+            const purse = await extractPurse(bot) // for purse logic, i might want to add additional tax to reflect new purse after listing tax
+            if (type) {
                 baseString = ``;
-                baseString += `Listed ${auction.item_name} for \`${auction.sellPrice.toLocaleString()}\` coins!\n`;
                 if (auction.data) {
-                    baseString += `**[WARNING]** Item was relisted using median | deviation of median / lbin was ${(auction.sellPrice / auction.data.lbin).toFixed(2)} (LBIN: ${auction.data.lbin})`
+                    baseString += `**[WARNING]**\n Item was relisted using median | deviation of median / lbin was ${(auction.sellPrice / auction.data.lbin).toFixed(2)} (LBIN: ${auction.data.lbin})\n`
                 }
-                embed = await bot.hook.embed("Relisted Auction!", baseString, "lightBlue");
+                baseString += `Listed ${auction.item_name} for \`${auction.sellPrice.toLocaleString()}\` coins!\n\n`;
+                baseString += `The original price this item was listed for was \`${auction.starting_bid.toLocaleString()}\`` // wont be able to reference for normal list
+                embed = await bot.hook.embed("Relisted Auction!", baseString, "lightBlue", `Slot [${bot.stats.activeSlots - bot.relistPipeline.length + 1}/${bot.stats.totalSlots}] | ${BMK(purse, 1)} Purse`);
             } else {
-                bot.stats.activeSlots++;
-                embed = await bot.hook.embed("Listed Auction!", `Listed ${auction.item_name} for \`${auction.sellPrice.toLocaleString()}\` coins!`, "lightBlue");
+                bot.stats.activeSlots++; // if it isnt relisting we add another item to active slots
+                embed = await bot.hook.embed("Listed Auction!", `Listed ${auction.item_name} for \`${auction.sellPrice.toLocaleString()}\` coins!`, "lightBlue", `Slot [${bot.stats.activeSlots}/${bot.stats.totalSlots}] | ${BMK(purse, 1)} Purse`);
             }
 
             embed.setURL(`https://sky.coflnet.com/auction/${auction.uuid}`)
             await bot.hook.send(embed)
             let relistTime = (process.env.listTime ?? bot.config.listTime).toString()
             const auctionExpiration = (((relistTime * 60) * 60) * 1000) // hour to ms
-            setTimeout(() => {
+            const timeout = setTimeout(() => {
                 log(`Adding relist of ${auction.item_name} to queue!`, "sys");
-
-            }, 15000 + auctionExpiration); 
+                startRelist(bot)
+            }, 30000 + auctionExpiration);
+            bot.listIntervals.push(timeout) 
 
             cleanup();
             resolve();
@@ -399,23 +404,13 @@ async function getNewPrice(bot, auction) {
 }
 
 
-// async function handleSign(bot, price) {
-//     return new Promise(async (resolve)   => {
-//             log(price)
-//             await sleep(400)
-//             bot.flayer._client.write('update_sign', {
-//                 location: bot.flayer.entity.position.offset(-1, 0, 0),
-//                 text1: price,
-//                 text2: '{"italic":false,"extra":["^^^^^^^^^^^^^^^"],"text":""}',
-//                 text3: '{"italic":false,"extra":["    Auction    "],"text":""}',
-//                 text4: '{"italic":false,"extra":["     hours     "],"text":""}'
-//             });
-//             resolve()
-//     })
-//}
-
-
-
+async function startRelist(bot) {
+    const { auctions, claimableAuctions, expiredAuctions } = await findAuctions(bot);
+    for (const auction of expiredAuctions) {
+        bot.relistPipeline.push(auction)
+    }
+    bot.state.emit("addToQueue", "relist")
+}
 
 
 
@@ -487,4 +482,4 @@ async function setMessageListener(bot, auction, window) {
 }
 
 
-module.exports = { findAuctions, claimItem, handleList  }
+module.exports = { findAuctions, claimItem, handleList, startRelist  }

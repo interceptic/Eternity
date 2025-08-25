@@ -1,5 +1,5 @@
 
-const { findAuctions } = require('./list');
+const { findAuctions, startRelist } = require('./list');
 const { extractPurse } = require('../info/purse');
 const { BMK , sleep, log} = require('../utils')
 const fs = require('fs');
@@ -15,11 +15,25 @@ async function mainEntry(bot) {
     purse = await extractPurse(bot);
     embed = await bot.hook.embed("Ready to Flip!", `# Account Data`,
     "yellow",
-    `Eternity | ${purse} Coin Purse`
+    `Eternity | ${BMK(purse, 1)} Coin Purse`
     );
     let totalWorth = 0;
+    if (bot.listIntervals.length > 0) {
+        bot.intervals.forEach(intervalId => {
+            clearInterval(intervalId);
+        });
+    }
     for(const auction of auctions) {
         totalWorth += auction.starting_bid;
+        const currentTime = Date.now();
+        if (auction.highest_bid_amount === 0 && auction.bin && auction.end > currentTime) {
+            log(`Will refresh when ${auction.item_name} ends!`, "sys", true)
+            const timeout = setTimeout(() => {
+                log(`Adding relist of ${auction.item_name} to queue!`, "sys");
+                startRelist(bot)
+            }, 30000 + (auction.end - currentTime)); 
+            bot.listIntervals.push(timeout) // cleaned up on restart or world change -> island
+        }
     }
     bot.stats.activeSlots = auctions.length;
     let claimWorth = 0

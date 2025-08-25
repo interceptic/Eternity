@@ -163,8 +163,8 @@ class DynamicState extends EventEmitter {
                     } catch (err) {
                         log(`List error detected for ${currentItem.item_name}: ${err}`, "warn");
                         log(`Removing ${currentItem.item_name} from pipeline due to permanent error`, "warn");
-                        const embed = await this.bot.hook.embed("Failed to List", `Not listing **${this.bot.listPipeline[s].item}** | \`${err}\``, "red")
-                        embed.setURL(`https://sky.coflnet.com/auction/${this.bot.listPipeline[s].uuid}`)
+                        const embed = await this.bot.hook.embed("Failed to List", `Not listing **${currentItem.item_name}** | \`${err}\``, "red")
+                        embed.setURL(`https://sky.coflnet.com/auction/${currentItem.uuid}`)
                         await this.bot.hook.send(embed)
                         this.bot.listPipeline.splice(s, 1);
                         s--;     
