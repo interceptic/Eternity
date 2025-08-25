@@ -13,7 +13,7 @@ const { createListeners } = require("./events/create");
 const boughtRegex = /^You purchased (.+?) for ([\d,]+) coins!$/;
 const { findAuctions } = require('./auction/list')
 const { stall } = require('./events/stall')
-const config = JSON.parse(fs.readFileSync('./config.json', 'utf8'));
+const { config } = require('../config.js');
 
 
 
@@ -36,9 +36,6 @@ async function handler(username) {
         }, 30000); // 30s heartbeat interval
         bot.intervals = [stallInterval]; // remove when restarting bot
     });
-
-
-
 
     // tpm higher level function click
     bot.betterClick = function (slot, mode1 = 0, mode2 = 0) {
