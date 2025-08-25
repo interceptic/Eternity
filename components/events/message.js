@@ -1,10 +1,10 @@
 const boughtRegex = /^You purchased (.+?) for ([\d,]+) coins!$/; // //thx henry? idk if this was from him
 const claimRegex = /You collected ([\d,]+) coins from selling (.+?) to (.+?) in an auction!/;
 const fs = require('fs');
-const config = JSON.parse(fs.readFileSync('./config.json', 'utf8'));
+const { config } = require('../../config.js');
 const { sleep, BMK, log, styleText } = require("../utils");
 const { handleTaxList, handleTaxClaim } = require('../auction/taxes')
-const soldRegex = /^\[Auction\] (.+?) bought (.+?) for ([\d,]+) coins CLICK$/; //thx henry
+const soldRegex = /^\[Auction\] (.+?) bought (.+?) for ([\d,]+) coins CLICK$/; //thx henry :)
 const { claimAuction } = require("../auction/main")
 const { extractPurse } = require('../info/purse');
 const listRegex = /^(.+?) created (.+?) for (.+?) at ([\d,]+) coins!$/

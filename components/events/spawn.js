@@ -1,5 +1,6 @@
 const { getLocraw } = require('../info/locraw')
 const { island } = require('../info/island')
+const { restartBot } = require('../events/stall')
 const { sleep, log } = require('../utils')
 const { mainEntry } = require('../auction/main')
 const Socket = require('../socket')
@@ -36,7 +37,7 @@ async function onSpawn(bot) {
         }
 
         await sleep(3000);
-        await island(bot, locraw);
+        await island(bot, locraw, restartBot);
     })
 }
 

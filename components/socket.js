@@ -4,20 +4,20 @@ const EventEmitter = require('events');
 const { BMK } = require('./utils');
 const fs = require('fs');
 const { randomUUID } = require('crypto');
+const { updateConfig, config } = require('../config.js');
 
 class Socket {
     constructor(bot) {
-        if(process.env.username) {
+        if (process.env.NODE_ENV === "dev") {
             if (process.env.modSocketID === "" || !process.env.modSocketID) {
                 console.error("Expected modSocketID in env, please apply before running in dev environment.")
                 process.exit(1)
             }
             this.id = process.env.modSocketId;
         } else {
-            const config = JSON.parse(fs.readFileSync('./config.json', 'utf8'));
             if (config.modSocketID === "") {
                 config.modSocketID = randomUUID();
-                this.updateConfig(config);
+                updateConfig(config);
             }
             this.id = config.modSocketID;
         }
@@ -25,16 +25,16 @@ class Socket {
         this.emitter = new EventEmitter();
         this.bot = bot;
     }
-    connect() {     
+    connect() {
         this.ws = new WebSocket(this.link); //autoflipper socket   
         this.ws.on('message', (response) => {
             // convert buffer to string and parse JSON
             try {
                 // sometimes doesnt recieve binary buffer weird
-                const msg = JSON.parse(response); 
+                const msg = JSON.parse(response);
                 const data = JSON.parse(msg.data)
-                switch(msg.type) {
-                    case "flip": 
+                switch (msg.type) {
+                    case "flip":
                         data.recieveTime = Date.now()
                         // log(JSON.stringify(data, null, 2))
                         this.bot.auctionPipeline.push(data)
@@ -43,29 +43,33 @@ class Socket {
                             log(`Flip case passed | state: ${state}`, "sys", true)
                             this.bot.state.emit("addToQueue", "buy", true)
                         }
-                        if(this.bot.waiting) {
+
+                        if (this.bot.waiting) {
                             log("bot is considerded to be waiting for next flip")
                             this.bot.state.emit("nextFlip");
                         }
+
                         const cleanName = data.itemName.replace(/§[0-9a-fk-or]/g, '');
                         if (!this.bot.holding[cleanName] || !this.bot.holding[cleanName][data.startingBid]) {
                             this.bot.holding[cleanName] = {};
                             this.bot.holding[cleanName][data.startingBid] = [];
                         }
+
                         const specificUUID = randomUUID();
                         data.uuid = specificUUID;
                         this.bot.holding[cleanName][data.startingBid].push(data)
-                        
-                        if(data.tag.slice(0,3) === "PET") {
+
+                        if (data.tag.slice(0, 3) === "PET") {
                             data.tag = "PET";
-                        } else if(data.tag.slice(0,4) === "RUNE") {
+                        } else if (data.tag.slice(0, 4) === "RUNE") {
                             data.tag = "RUNE";
                         }
-                        if(!this.bot.holding[data.startingBid] || !this.bot.holding[data.startingBid][data.tag]) {
+
+                        if (!this.bot.holding[data.startingBid] || !this.bot.holding[data.startingBid][data.tag]) {
                             this.bot.holding[data.startingBid] = {}
                             this.bot.holding[data.startingBid][data.tag] = []
                         }
-                        this.bot.holding[data.startingBid][data.tag].push({"type": "Unknown", "tpmTime": 0})
+                        this.bot.holding[data.startingBid][data.tag].push({ "type": "Unknown", "tpmTime": 0 })
                         // after 15 seconds and flip isnt bought it will remove from array (ONLY IF ALL OTHER CHECKS DONT PASS)
                         // setTimeout(() => {
                         //     try {
@@ -85,7 +89,7 @@ class Socket {
                             console.log(styleText(data[0]["text"]));
                         }
                         break;
-                    case "writeToChat":                   
+                    case "writeToChat":
                         console.log(styleText(data["text"]));
                         break;
                 }
@@ -113,14 +117,13 @@ class Socket {
         this.disconnect()
         this.connect()
     }
-    // for modsocket ID
-    updateConfig(newConfig) {
-        const fs = require('fs');
-        fs.writeFileSync('./config.json', JSON.stringify(newConfig, null, 2), 'utf8');
-    }
 
     send(msg) {
-        this.ws.send(msg)
+        if (this.ws.readyState === WebSocket.OPEN) {
+            this.ws.send(msg)
+        } else {
+            console.warn(`Socket not open, skipping message ${msg.type || ""}`);
+        }
     }
 
     disconnect() {
@@ -129,11 +132,6 @@ class Socket {
         }
     }
 
-
-
 }
-// let sock = new Socket("ikun__kfc")
-// sock.connect()
-
 
 module.exports = Socket
