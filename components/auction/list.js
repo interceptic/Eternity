@@ -1,7 +1,7 @@
 
 const axios = require('axios');
 const fs = require('fs');
-const config = JSON.parse(fs.readFileSync('./config.json', 'utf8'));
+const { config } = require('../../config.js');
 const { log, sleep, BMK } = require("../utils")
 const { load } = require("./buy");
 const { extractPurse } = require('../info/purse');

@@ -3,18 +3,16 @@ const { getLocraw } = require('../info/locraw')
 const { log, sleep } = require("../utils")
 
 async function stall(bot) {
-
-
     // assuming bot is ended
-    if(bot.state.getState() !== "reconnecting" && bot.flayer._client.ended) {
-        log("Bot disconnect found? not caught by normal event... Attempting restart", "sys") 
+    if (bot.state.getState() !== "reconnecting" && bot.flayer._client.ended) {
+        log("Bot disconnect found? not caught by normal event... Attempting restart", "sys")
         await restartBot(bot, "Bot disconnect found? not caught by normal event... Attempting restart");
         return;
     }
 
     // below segment handles stall
-    if(Date.now() - bot.lastAction > 900000) { // 15 min no window / action
-        if(bot.stallCalls > 0) { // went through the stall checks and issue not fixed
+    if (Date.now() - bot.lastAction > 900000) { // 15 min no window / action
+        if (bot.stallCalls > 0) { // went through the stall checks and issue not fixed
             console.log("Probably stalled - attempting restart...")
             let embed = await bot.hook.embed("Stall Suspected", `${bot.info['name']} hasn't opened a window in the past 15 minutes`, "red")
             await bot.hook.send(embed)
@@ -31,7 +29,7 @@ async function stall(bot) {
                 await restartBot(bot, "No response from server when checking locraw")
                 return
             }
-            
+
             if (!bot.flayer.health || bot.flayer.health <= 0) { // might work as a check?
                 console.log("Bot health is 0 - likely disconnected")
                 let embed = await bot.hook.embed("Bot Dead?", "Bot health is 0, attempting a reconnect", "red")
@@ -39,7 +37,7 @@ async function stall(bot) {
                 await restartBot(bot, "Bot health is 0 -- likely disconnected.")
                 return
             }
-            
+
             bot.stallCalls++
         } catch (error) {
             console.error("Error checking stall status:", error) // probably not connected
@@ -50,9 +48,9 @@ async function stall(bot) {
         // has acted recently, reset timer thing to zero
         bot.stallCalls = 0
     }
-    
+
     // auction heartbeat
-    if((bot.listPipeline.length > 0 && bot.stats.activeSlots < bot.stats.totalSlots) && bot.state.getState() !== "processing") {
+    if ((bot.listPipeline.length > 0 && bot.stats.activeSlots < bot.stats.totalSlots) && bot.state.getState() !== "processing") {
         bot.state.emit("addToQueue", "list")
         return;
     }
@@ -64,7 +62,7 @@ async function stall(bot) {
 async function restartBot(bot, reason) {
     if (bot.state.getState() !== "reconnecting") {
         log("Restarting bot...", "sys")
-        const embed = await bot.hook.embed("Restarting Bot", `**Bot connection is being restarted...**\n\n**Reason:** \`${reason}\``, "red") 
+        const embed = await bot.hook.embed("Restarting Bot", `**Bot connection is being restarted...**\n\n**Reason:** \`${reason}\``, "red")
         await bot.hook.send(embed)
         bot.state.setState("reconnecting")
         try {
@@ -73,7 +71,7 @@ async function restartBot(bot, reason) {
                 bot.socket.disconnect();
                 bot.socket = null;
             }
-            
+
             if (bot.flayer) {
                 bot.flayer.quit();
             }
@@ -89,7 +87,7 @@ async function restartBot(bot, reason) {
                     clearInterval(intervalId);
                 });
             }
-            
+
             // wait for clean
             await new Promise(resolve => setTimeout(resolve, 4000))
             // restart entire script
@@ -98,7 +96,7 @@ async function restartBot(bot, reason) {
             bot.flayer.removeAllListeners();
             await sleep(4000)
             await handler(bot.flayer._client.username)
-            
+
         } catch (error) {
             console.error("Error during restart:", error)
             // exit if failure to restart (fixes restart loop)
@@ -112,8 +110,8 @@ async function checkLocation(locraw, bot) {
     if (locraw?.server === "limbo") {
         bot.state.setState("limbo")
     }
-    if(locraw?.gametype !== "SKYBLOCK" || locraw?.gametype === null) {
-        await island(bot, locraw)
+    if (locraw?.gametype !== "SKYBLOCK" || locraw?.gametype === null) {
+        await island(bot, locraw, restartBot)
     }
 }
 
