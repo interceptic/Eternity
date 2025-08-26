@@ -65,7 +65,7 @@ class Socket {
                             this.bot.holding[data.startingBid] = {}
                             this.bot.holding[data.startingBid][data.tag] = []
                         }
-                        this.bot.holding[data.startingBid][data.tag].push({"type": "Unknown", "tpmTime": 0})
+                        this.bot.holding[parseInt(data.startingBid)][data.tag].push({"type": "Unknown", "tpmTime": 0})
                         // after 15 seconds and flip isnt bought it will remove from array (ONLY IF ALL OTHER CHECKS DONT PASS)
                         // setTimeout(() => {
                         //     try {

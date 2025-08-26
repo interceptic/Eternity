@@ -13,10 +13,10 @@ async function onSpawn(bot) {
             bot.state.setState("waiting");
             await sleep(4000)
             await mainEntry(bot)
-            if (bot.socket === null) {
-                bot.socket = new Socket(bot);
-                bot.socket.open()
-            }
+            // if (bot.socket === null) {
+            //     bot.socket = new Socket(bot);
+            //     bot.socket.open()
+            // }
             return;
         };
 

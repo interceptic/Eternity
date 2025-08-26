@@ -4,6 +4,7 @@ const EventEmitter = require('events');
 const { buy, disableOpenWindowListener } = require("./auction/buy");
 const { styleText, BMK } = require("./utils");
 const { claimItem } = require("./auction/list")
+const Socket = require('./socket')
 
 // I WILL ADD BETTER DOCS FOR THIS SOON 
 
@@ -189,6 +190,10 @@ class DynamicState extends EventEmitter {
                     this.bot.relistPipeline.splice(s, 1);
                     s--;
                     await sleep(700);
+                }
+                if (this.bot.socket === null) {
+                this.bot.socket = new Socket(this.bot);
+                this.bot.socket.open()
                 }
             }
         }

@@ -24,6 +24,7 @@ function windowStats(bot, windowObj, type, winOpen, latestItem, latestPrice) {
 
 function handleMessageEvent(bot, price, tag, latestItem, latestPrice) {
     let checked = false;
+    let purchased = false;
     const messageListener = (message, position) => {
         if (position === "game_info") return;
         const listenerMessage = message.toAnsi()
@@ -36,10 +37,11 @@ function handleMessageEvent(bot, price, tag, latestItem, latestPrice) {
         }
         // if purchased comes first just skip
         if(listenerMessage.includes("You purchased")) {
+            purchased = true;
             clearTimeout(timeout);
             bot.flayer.removeListener('message', messageListener);
         }
-        if(listenerMessage.includes("There was an error")) {
+        if(listenerMessage.includes("There was an error") && !purchased) {
             clearTimeout(timeout)
             bot.holding[latestItem][latestPrice].shift() // didnt buy so removes the item (duplicate bug fix)
             bot.holding[price][tag].shift()
