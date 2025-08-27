@@ -138,7 +138,7 @@ async function handleList(bot, auction, type) {
           case title.includes("Auction Duration"):
             bot.packets.click(16, window.windowId, -1) // click on sign
             await sleep(500)
-            const listTime = (process.env.listTime ?? bot.config.listTime).toString()
+            const listTime = config.customization.listTime
             bot.flayer._client.write('update_sign', {
                 location: bot.flayer.entity.position.offset(-1, 0, 0),
                 text1:  listTime,
@@ -293,7 +293,7 @@ async function handleList(bot, auction, type) {
 
             embed.setURL(`https://sky.coflnet.com/auction/${auction.uuid}`)
             await bot.hook.send(embed)
-            let relistTime = (process.env.listTime ?? bot.config.listTime).toString()
+            let relistTime = config.customization.listTime
             const auctionExpiration = (((relistTime * 60) * 60) * 1000) // hour to ms
             const timeout = setTimeout(() => {
                 log(`Adding relist of ${auction.item_name} to queue!`, "sys");
@@ -416,8 +416,7 @@ async function startRelist(bot) {
 
 async function fetchProfile(bot) {
     try {
-        const apiKey = process.env.apiKey ?? config.apiKey
-        const { data } = await axios.get(`https://api.hypixel.net/v2/skyblock/profiles?uuid=${bot.info.id}&key=${apiKey}`);
+        const { data } = await axios.get(`https://api.hypixel.net/v2/skyblock/profiles?uuid=${bot.info.id}&key=${config.apiKey}`);
         const profile = data.profiles.find(profile => profile.selected);
         fs.writeFileSync('./profileData.json', JSON.stringify(profile, null, 2));
         return profile;
@@ -428,8 +427,7 @@ async function fetchProfile(bot) {
 }
 
 async function fetchAuctions(profile_id) {
-    const apiKey = process.env.apiKey ?? config.apiKey
-    const { data } = await axios.get(`https://api.hypixel.net/v2/skyblock/auction?profile=${profile_id}&key=${apiKey}`)
+    const { data } = await axios.get(`https://api.hypixel.net/v2/skyblock/auction?profile=${profile_id}&key=${config.apiKey}`)
     const auctions = data.auctions.filter(({claimed}) => !claimed)
     const claimableAuctions = auctions.filter(auction => auction.highest_bid_amount > 0 && auction.bin)
     const expiredAuctions = auctions.filter(auction => auction.end < Date.now() && auction.highest_bid_amount === 0 && auction.bin)
@@ -446,8 +444,7 @@ async function fetchCoop(profile) {
             log(`Skipping undefined uuid`, "warn")
             continue
         }
-        const apiKey = process.env.apiKey ?? config.apiKey
-        const {data} = await axios.get(`https://api.hypixel.net/v2/skyblock/profiles?uuid=${coopMember}&key=${apiKey}`)
+        const {data} = await axios.get(`https://api.hypixel.net/v2/skyblock/profiles?uuid=${coopMember}&key=${config.apiKey}`)
         if (data.profiles) {
             if (data.profiles.find(({profile_id}) => profile_id === profile.profile_id)) {
                 activeCount++

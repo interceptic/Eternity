@@ -68,12 +68,6 @@ class Unit {
             totalSlots: null,
             
         };
-        const listTime = process.env.listTime ?? config.customization.listTime;
-        const roundToNearest = process.env.roundToNearest ?? config.customization.roundToNearest;
-        this.config = {
-            "listTime": listTime,
-            "roundToNearest": roundToNearest
-        }
         this.holding = {};
         this.claimCell = {}
         this.relistPipeline = []

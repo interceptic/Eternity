@@ -9,7 +9,7 @@ const { updateConfig, config } = require('../config.js');
 class Socket {
     constructor(bot) {
         if (process.env.NODE_ENV === "dev") {
-            if (process.env.modSocketID === "" || !process.env.modSocketID) {
+            if (config.modSocketID === "") {
                 console.error("Expected modSocketID in env, please apply before running in dev environment.")
                 process.exit(1)
             }

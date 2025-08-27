@@ -15,7 +15,7 @@ class Webhook {
             "blue": "#2f4f7f",
             "lightBlue": "#add8e6",
         }
-        const webhook = process.env.webhook || config.webhook || "";
+        const webhook = config.webhook || "";
         this.webhookClient = webhook ? new WebhookClient({ url: webhook }) : null;
 
     }

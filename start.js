@@ -1,5 +1,5 @@
 const { handler } = require("./components/bot");
-const { config } = require("./config.js");
+const { config, configEntry } = require("./config.js");
 const { askUser } = require("./components/console");
 const { log, sleep } = require("./components/utils");
 const startTime = Date.now();
@@ -9,10 +9,12 @@ process.env.NODE_NO_WARNINGS = process.env.NODE_NO_WARNINGS || "1";
 
 switch (process.env.NODE_ENV) {
     case "main":
+        configEntry();
         handler(config.username.trim());
         break;
     case "dev":
-        require('dotenv').config();
+        configEntry(true)
+        log(JSON.stringify(config))
         handler(process.env.username);
         break;
     default:
