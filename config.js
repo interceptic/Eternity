@@ -77,44 +77,62 @@ function updateConfig(_config) {
     fs.writeFileSync('./config.json', JSON.stringify(config, null, 2));
 }
 
-function createDevConfig() {
-    const mainItems = ["apiKey", "webhook", "username", "modSocketID"];
-    const customizationItems = ["listTime"];
-    config = seedEnv(mainItems, customizationItems);
-    configEntry(false)
-}
-
-function seedEnv(mainItems, customizationItems) {
-    for (const item of mainItems) {
-        if (!process.env[item]) {
-            console.error(`${item} does not exist as an environment variable! Please set it in the .env file!`);
+async function createDevConfig() {
+    return new Promise(async (resolve, reject) => {
+        const mainItems = ["apiKey", "webhook", "username", "modSocketID"];
+        const customizationItems = ["listTime"];
+        try {
+            Object.assign(config, await seedEnv(mainItems, customizationItems));
+        } catch (err) {
+            console.error(`devConfig Error: ${JSON.stringify(err)}`);
             process.exit(1);
-        };
-        env[item] = process.env[item];
-        continue;
-    };
-
-    for (const item of customizationItems) {
-        if (!process.env[item]) {
-            console.error(`${item} does not exist as an environment variable! Please set it in the .env file!`);
-            process.exit(1);
-        };
-        env.customization.listTime = parseInt(process.env[item]);
-        continue;
-    };
-    return env;
-}
-
-function configEntry(dev = false) {
-    if (!dev) {
-        verifyExists("username");
-        verifyExists("apiKey");
-        verifyExistsCustomization("listTime");
-        warnExists("webhook");
+        }
+        resolve();
         return;
-    }
-    require('dotenv').config(); // loads .env into environment
-    createDevConfig()
+    })
+}
+
+async function seedEnv(mainItems, customizationItems) {
+    return new Promise((resolve, reject) => {
+        for (const item of mainItems) {
+            if (!process.env[item]) {
+                console.error(`${item} does not exist as an environment variable! Please set it in the .env file!`);
+                process.exit(1);
+            };
+            env[item] = process.env[item];
+            continue;
+        };
+    
+        for (const item of customizationItems) {
+            if (!process.env[item]) {
+                console.error(`${item} does not exist as an environment variable! Please set it in the .env file!`);
+                process.exit(1);
+            };
+            env.customization.listTime = parseInt(process.env[item]);
+            continue;
+        };
+        resolve(env);
+        return;
+    })
+}
+
+async function configEntry(dev = false) {
+    return new Promise(async (resolve, reject) => {
+        if (!dev) {
+            verifyExists("username");
+            verifyExists("apiKey");
+            verifyExistsCustomization("listTime");
+            warnExists("webhook");
+            resolve();
+            return;
+        }
+        require('dotenv').config(); // loads .env into environment
+        await createDevConfig().then(async value => {
+            await configEntry(false);
+            resolve();
+            return;
+        })
+    })
 }
 
 
