@@ -33,6 +33,10 @@ let env = {
     }
 }
 
+const mainItems = ["apiKey", "webhook", "username", "modSocketID"];
+const customizationItems = ["listTime"];
+const warningItems = ["webhook"]
+
 let config = DEFAULT_CONFIG;
 
 if (fs.existsSync('./config.json')) {
@@ -79,12 +83,10 @@ function updateConfig(_config) {
 
 async function createDevConfig() {
     return new Promise(async (resolve, reject) => {
-        const mainItems = ["apiKey", "webhook", "username", "modSocketID"];
-        const customizationItems = ["listTime"];
         try {
             Object.assign(config, await seedEnv(mainItems, customizationItems));
         } catch (err) {
-            console.error(`devConfig Error: ${JSON.stringify(err)}`);
+            console.error(`devConfig Error: ${err}`);
             process.exit(1);
         }
         resolve();
@@ -96,6 +98,10 @@ async function seedEnv(mainItems, customizationItems) {
     return new Promise((resolve, reject) => {
         for (const item of mainItems) {
             if (!process.env[item]) {
+                if (warningItems.some(warnItem => warnItem === item)) {
+                    console.warn(`${item} not set in env! consider adding :)`);
+                    continue;
+                }
                 console.error(`${item} does not exist as an environment variable! Please set it in the .env file!`);
                 process.exit(1);
             };
@@ -128,7 +134,6 @@ async function configEntry(dev = false) {
         }
         require('dotenv').config(); // loads .env into environment
         await createDevConfig().then(async value => {
-            await configEntry(false);
             resolve();
             return;
         })

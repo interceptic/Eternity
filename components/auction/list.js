@@ -139,9 +139,10 @@ async function handleList(bot, auction, type) {
             bot.packets.click(16, window.windowId, -1) // click on sign
             await sleep(500)
             const listTime = config.customization.listTime
+            log(listTime)
             bot.flayer._client.write('update_sign', {
                 location: bot.flayer.entity.position.offset(-1, 0, 0),
-                text1:  listTime,
+                text1:  parseInt(listTime),
                 text2: '{"italic":false,"extra":["^^^^^^^^^^^^^^^"],"text":""}',
                 text3: '{"italic":false,"extra":["    Auction    "],"text":""}',
                 text4: '{"italic":false,"extra":["     hours     "],"text":""}'

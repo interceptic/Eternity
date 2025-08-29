@@ -3,10 +3,9 @@ const path = require('path');
 
 
 // Where to place log file
-
-const logDir = process.pkg ? "./logs" : "../logs";
+const logDir = path.resolve(__dirname, '..', 'log');
 if (!fs.existsSync(logDir)) {
-    fs.mkdirSync(logDir);
+    fs.mkdirSync(logDir, { recursive: true });
 }
 const startTime = new Date();
 const logFile = path.join(
