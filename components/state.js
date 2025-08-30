@@ -146,7 +146,7 @@ class DynamicState extends EventEmitter {
                     }
                     if (this.bot.listPipeline[s].finder.toLowerCase().includes("user")) {
                         log(`Not listing ${this.bot.listPipeline[s].item} | Item found by user filter`, "sys")
-                        const embed = await this.bot.hook.embed("Failed to List", `Not listing **${this.bot.listPipeline[s].item}** | Found by User Finder`, "white")
+                        const embed = await this.bot.hook.embed("Failed to List", `Not listing **${this.bot.listPipeline[s].item_name}** | Found by User Finder`, "white")
                         embed.setURL(`https://sky.coflnet.com/auction/${this.bot.listPipeline[s].uuid}`)
                         await this.bot.hook.send(embed)
                         this.bot.listPipeline.splice(s, 1);

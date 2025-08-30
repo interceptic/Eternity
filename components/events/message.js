@@ -7,6 +7,7 @@ const { handleTaxList, handleTaxClaim } = require('../auction/taxes')
 const soldRegex = /^\[Auction\] (.+?) bought (.+?) for ([\d,]+) coins CLICK$/; //thx henry :)
 const { claimAuction } = require("../auction/main")
 const { extractPurse } = require('../info/purse');
+const { claimItem } = require('../auction/list.js');
 const listRegex = /^(.+?) created (.+?) for (.+?) at ([\d,]+) coins!$/
 const listRegex2 = /^(.+?) listed (.+?) for (.+?) at ([\d,]+) coins!$/
 
@@ -123,24 +124,30 @@ async function handleMessageEvent(message, bot) {
             // await bot.hook.embed(`https://sky.coflnet.com/auction/${id}`, `# Bought ${itemName} for ${bought[2]} coins!\n\nProfit: **${BMK(afterTaxProfit)}** | **${profitPercent}%** | **Tax: ${BMK(taxAmount)}**\nFinder: **${finder}** | Type: **${type}**\nSkipped window: **${skipped}**\nElapsed time: **${completeTime}ms** | TPM time: **${tpmTime}ms**`, "green")
 
             let econString = "";
-            econString += `Target: **~${BMK(estimatedSellPrice, 1)}**\n`
-            econString += `Profit: **~${BMK(afterTaxProfit, 1)} (${profitPercent}%)**\n`
-            econString += `Tax: **~${BMK(taxAmount, 1)}**`
+            econString += `Target: **${BMK(estimatedSellPrice, 1)}**\n`;
+            econString += `Profit: **${BMK(afterTaxProfit, 1)} (${profitPercent}%)**\n`;
+            econString += `Tax: **${BMK(taxAmount, 1)}**\n`;
+            econString += `Finder: **${finder}**`;
 
             let statString = "";
-            statString += `Type: **${type}**\n`
-            statString += `Request Time: **${completeTime}ms**\n`
+            statString += `Type: **${type}**\n`;
+            statString += `Request Time: **${completeTime}ms**\n`;
             if (type !== "Bed") {
-                statString += `Window to Purchase: **${tpmTime}ms**\n`
-                statString += `Window Skip: **${skipped}**\n`
+                statString += `Window to Purchase: **${tpmTime}ms**\n`;
+                statString += `Window Skip: **${skipped}**\n`;
             }
-            statString += `Finder: **${finder}**`
+            
+            let accountString = "";
+            accountString += `Current Slots: **[${bot.stats.activeSlots}/${bot.stats.totalSlots}]**\n`;
+            accountString += `List Time: **${config.customization.listTime} hours**\n`;
+            accountString += `Purse: **${BMK(await extractPurse(bot, "claimItem", boughtPrice), 2)}**`;
+
 
             // bought[2] is price with commas
             bot.listPipeline.push({"item_name": itemName, "sellPrice": estimatedSellPrice, "uuid": id, "finder": finder});
-            let embed = await bot.hook.embed("Bought Auction!", `# Bought ${itemName} for ${bought[2]} coins!\n`, "green");
+            let embed = await bot.hook.embed("Bought Auction!", `# Bought ${itemName} for ${BMK(boughtPrice, 1)} coins! (${BMK(afterTaxProfit)})\n`, "green");
             embed.setURL(`https://sky.coflnet.com/auction/${id}`)
-            embed.addFields({name: "Economics", value: econString, inline: true}, {name: "Statistics", value: statString, inline: true})
+            embed.addFields({name: "Economics", value: econString, inline: true}, {name: "Statistics", value: statString, inline: true}, {name: "Additional", value: accountString, inline: false})
             if (bot.listPipeline.length > 0 && (bot.stats.activeSlots === bot.stats.totalSlots || bot.stats.activeSlots + bot.listPipeline.length > bot.stats.totalSlots)) {
                 function addOrdinalSuffix(i) {
                     var j = i % 10,

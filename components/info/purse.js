@@ -1,4 +1,4 @@
-async function extractPurse(bot) {
+async function extractPurse(bot, type = null, boughtPrice = null) {
     let purse;
     let scoreboard = bot.flayer?.scoreboard?.sidebar?.items?.map(item => item?.displayName?.getText(null)?.replace(item?.name, ''));
     scoreboard?.forEach(e => {
@@ -8,6 +8,11 @@ async function extractPurse(bot) {
             purse = parseInt(purseString.replace(/\D/g, ''), 10);
         }
     });
+    if(purse === bot.stats.purse && type === "boughtItem") {
+        if (auction !== null) {
+            purse = purse - boughtPrice;
+        }
+   }
     return purse;
 }
 

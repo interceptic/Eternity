@@ -55,14 +55,13 @@ function verifyExists(key) {
 }
 
 function verifyExistsCustomization(key) {
-    if (!config["customization"][key]) {
+    if (!config["customization"][key] == null) {
         console.error(`${key} is not set in config.json! Please set it and restart the bot.`);
         process.exit(1);
     }
     switch (key) {
         case "listTime": {
             if(config["customization"][key] < 1 || config["customization"][key] > 48 || !Number.isInteger(config["customization"][key])) {
-                console.log(config["customization"][key])
                 console.error(`'listTime' in customization must be an integer between 1 and 48. Please correct it in config.json then restart the bot.`);
                 process.exit(1);
             }
@@ -80,6 +79,10 @@ function updateConfig(_config) {
     config = { ..._config, ...config };
     fs.writeFileSync('./config.json', JSON.stringify(config, null, 2));
 }
+
+
+
+// dev below ->
 
 async function createDevConfig() {
     return new Promise(async (resolve, reject) => {
@@ -122,6 +125,7 @@ async function seedEnv(mainItems, customizationItems) {
     })
 }
 
+
 async function configEntry(dev = false) {
     return new Promise(async (resolve, reject) => {
         if (!dev) {
@@ -134,6 +138,7 @@ async function configEntry(dev = false) {
         }
         require('dotenv').config(); // loads .env into environment
         await createDevConfig().then(async value => {
+            await configEntry();
             resolve();
             return;
         })
