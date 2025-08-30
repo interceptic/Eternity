@@ -1,5 +1,5 @@
 const fs = require('fs');
-
+const { log } = require("./components/utils")
 const DEFAULT_CONFIG = {
     "webhook": "",
     "username": "",
@@ -43,7 +43,7 @@ if (fs.existsSync('./config.json')) {
     config = JSON.parse(fs.readFileSync('./config.json', 'utf8'));
 } else {
     fs.writeFileSync('./config.json', JSON.stringify(DEFAULT_CONFIG, null, 2));
-    console.log("Config.json not found! Please set your username in the config.json file and restart the bot.");
+    log("Config.json not found! Please set your username in the config.json file and restart the bot.", "warn");
     process.exit(1);
 }
 
@@ -72,7 +72,7 @@ function verifyExistsCustomization(key) {
 
 function warnExists(key) {
     if (!config[key]) {
-        console.warn(`${key} is not set in config.json! If you want to use this feature, please set it.`);
+        log(`${key} is not set in config.json! If you want to use this feature, please set it.`, "warn");
     }
 }
 
@@ -86,7 +86,7 @@ async function createDevConfig() {
         try {
             Object.assign(config, await seedEnv(mainItems, customizationItems));
         } catch (err) {
-            console.error(`devConfig Error: ${err}`);
+            log(`devConfig Error: ${err}`, "warn");
             process.exit(1);
         }
         resolve();
@@ -99,10 +99,10 @@ async function seedEnv(mainItems, customizationItems) {
         for (const item of mainItems) {
             if (!process.env[item]) {
                 if (warningItems.some(warnItem => warnItem === item)) {
-                    console.warn(`${item} not set in env! consider adding :)`);
+                    log(`${item} not set in env! consider adding :)`, "warn");
                     continue;
                 }
-                console.error(`${item} does not exist as an environment variable! Please set it in the .env file!`);
+                log(`${item} does not exist as an environment variable! Please set it in the .env file!`, "warn");
                 process.exit(1);
             };
             env[item] = process.env[item];
@@ -111,7 +111,7 @@ async function seedEnv(mainItems, customizationItems) {
     
         for (const item of customizationItems) {
             if (!process.env[item]) {
-                console.error(`${item} does not exist as an environment variable! Please set it in the .env file!`);
+                log(`${item} does not exist as an environment variable! Please set it in the .env file!`, "warn");
                 process.exit(1);
             };
             env.customization.listTime = parseInt(process.env[item]);

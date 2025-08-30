@@ -136,18 +136,14 @@ async function handleList(bot, auction, type) {
             break;
           // handle main window
           case title.includes("Auction Duration"):
-            bot.packets.click(16, window.windowId, -1) // click on sign
-            await sleep(500)
-            const listTime = config.customization.listTime
-            log(listTime)
-            bot.flayer._client.write('update_sign', {
-                location: bot.flayer.entity.position.offset(-1, 0, 0),
-                text1:  parseInt(listTime),
-                text2: '{"italic":false,"extra":["^^^^^^^^^^^^^^^"],"text":""}',
-                text3: '{"italic":false,"extra":["    Auction    "],"text":""}',
-                text4: '{"italic":false,"extra":["     hours     "],"text":""}'
-            });
-            time = true;
+            await sleep(100)
+            time = true; // time window opened
+            try {
+                await handleSign(bot, "auctionListTime", window, auction);
+            } catch (error) {
+                reject(`HandleSign Time | ${error}`);
+                return;
+            }
             break;
           case title.includes("Create BIN Auction"):
             if (paid && time) {
@@ -192,31 +188,11 @@ async function handleList(bot, auction, type) {
                 bot.packets.click(33, window.windowId, -1) // open clock sign
                 log("Clicked slot 33 to open auction duration window", "sys", true)
             } else if (!paid && !time) {
-                // bot.flayer._client.once('open_sign_entity', async (sign) => {
-                //     log(`Sign entity opened at location: ${JSON.stringify(sign)}`);
-                //     log(`location entity opened at location: ${JSON.stringify(sign.location)}`);
-                //     let price = auction.sellPrice;
-                //     log(`Price to set: ${Math.floor(price)}`);
-                //     await sleep(1000);
-                //     bot.flayer._client.write('update_sign', {
-                //         location: {
-                //             "x": sign.location.x,
-                //             "y": sign.location.y,
-                //             "z": sign.location.z
-                //         },
-                //         text1: `"${price}"`,
-                //         text2: '{"italic":false,"extra":["^^^^^^^^^^^^^^^"],"text":""}',
-                //         text3: '{"italic":false,"extra":["    Auction    "],"text":""}',
-                //         text4: '{"italic":false,"extra":["     hours     "],"text":""}'
-                //     });
-                //     log("Sign update event expected");
-                // });
-                // handleSign(bot, `"${auction.sellPrice}"`)
-                
                 // put item in slot
+                paid = true; // this window hs opened
                 let slot = await load(bot.flayer.currentWindow, 13)
                 if (slot !== "stone_button") {
-                  bot.packets.click(13, window.windowId, -1);
+                  bot.packets.click(13, window.windowId, -1); // remove existing item from auction slot
                   await sleep(300);
                 }
                 
@@ -227,10 +203,9 @@ async function handleList(bot, auction, type) {
                 
                 log(`Processing price for ${auction.item_name} (UUID: ${auction.uuid})`, "sys", true);
                 
-                // Calculate the final price based on type
                 let finalPrice;
                 if (type) {
-                    // For relist items, get new price from API
+                    // fetch from api for relist
                     log(`Getting new price for relist item: ${auction.item_name}`, "sys", true);
                     const newPrice = await getNewPrice(bot, auction)
                         .catch(err => {
@@ -241,7 +216,7 @@ async function handleList(bot, auction, type) {
                     finalPrice = handleRounding(newPrice * 0.985);
                     log(`New price from API: ${newPrice}, after rounding and discount: ${finalPrice}`, "sys", true);
                 } else {
-                    // For regular items, use existing price
+                    // use existing price in the auction object
                     log(`Using existing price for item: ${auction.item_name} - ${auction.sellPrice}`, "sys", true);
                     finalPrice = handleRounding(auction.sellPrice);
                 }
@@ -249,7 +224,7 @@ async function handleList(bot, auction, type) {
                 // Validate the price
                 if (isNaN(finalPrice) || finalPrice <= 0) {
                     log(`Invalid price calculated: ${finalPrice} for item ${auction.item_name}`, "warn");
-                    reject("Invalid price error")
+                    reject("Invalid price error");
                     return;
                 }
                 
@@ -257,20 +232,15 @@ async function handleList(bot, auction, type) {
                 auction.sellPrice = Math.floor(finalPrice);
                 log(`Final price set for ${auction.item_name}: ${auction.sellPrice}`, "sys", true);
                 bot.packets.click(auction.slot + bot.flayer.currentWindow.slots.length - 45, window.windowId, -1);
-                await sleep(400)
+                await sleep(250);
 
-                bot.packets.click(31, window.windowId, -1);
-                await sleep(1000)
-                bot.flayer._client.write('update_sign', {
-                    location: bot.flayer.entity.position.offset(-1, 0, 0),
-                    text1: auction.sellPrice.toString(),
-                    text2: '{"italic":false,"extra":["^^^^^^^^^^^^^^^"],"text":""}',
-                    text3: '{"italic":false,"extra":["    Auction    "],"text":""}',
-                    text4: '{"italic":false,"extra":["     hours     "],"text":""}'
-                });
-                // await sleep(350)
+                try {
+                    await handleSign(bot, "auctionSellPrice", window, auction);
+                } catch (error) {
+                    reject(`HandleSign Price | ${error}`);
+                    return;
+                }        
                 log(`Price now set to ${auction.sellPrice}`, "sys", true)
-                paid = true;
             }
             break;
           case title.includes("Confirm BIN Auction"):
@@ -402,6 +372,65 @@ async function getNewPrice(bot, auction) {
             reject(`Unable to reprice: ${error}`);
         }
     });
+}
+
+
+async function handleSign(bot, value, window, auction) {
+    return new Promise(async (resolve, reject) => {
+        
+        bot.flayer._client.once('open_sign_entity', async (packet) => {
+            log("Detected sign!", "sys", true);
+            await sleep(120);
+
+            const onPacket = (data, meta) => {
+                if (meta.name === 'update_sign') {
+                  console.log("Sign updated:", data);
+                  bot.flayer._client.removeListener('packet', onPacket); // remove listener once the sign is updated
+                  resolve();
+                  return;
+                }
+            };
+            bot.flayer._client.on('packet', onPacket);
+            
+            let inputText;
+            switch (value) {
+                case "auctionSellPrice": {
+                    inputText = auction.sellPrice;
+                    break;
+                }
+                case "auctionListTime": {
+                    inputText = config.customization.listTime;
+                    break;
+                }
+            }
+    
+            bot.flayer._client.write('update_sign', {
+                location: bot.flayer.entity.position.offset(-1, 0, 0),
+                text1:  inputText.toString(),
+                text2: '{"italic":false,"extra":["^^^^^^^^^^^^^^^"],"text":""}',
+                text3: '{"italic":false,"extra":["    Auction    "],"text":""}',
+                text4: '{"italic":false,"extra":["     hours     "],"text":""}'
+            });
+            
+        });
+        // click to open the sign
+        switch (value) {
+            case "auctionSellPrice": {
+                bot.packets.click(31, window.windowId, -1);
+                break;
+            }
+            case "auctionListTime": {
+                bot.packets.click(16, window.windowId, -1);
+                break;
+            }
+            default: {
+                const error = `Unable to find a sign matcher for ${value}!`;
+                log(error, "warn");
+                reject(error);
+            }
+        }
+
+    })
 }
 
 
