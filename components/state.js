@@ -79,7 +79,7 @@ class DynamicState extends EventEmitter {
                         this.bot.latestPrice = auction.startingBid
                         this.bot.chat(`/viewauction ${auction.id}`);
                         log(styleText(`Starting buy request for ${auction.itemName} at ${BMK(auction.startingBid)} (${BMK(auction.target - auction.startingBid)})`), "sys");
-                        log(`Time to send message:  ${Date.now() - auction.recieveTime}ms`, "sys")
+                        log(`Time to send message:  ${Date.now() - auction.recieveTime}ms`, "sys", true)
                         this.bot.recieveTime = auction.recieveTime;
                         this.bot.auctionPipeline.shift();
                     } else {
@@ -123,7 +123,7 @@ class DynamicState extends EventEmitter {
                     timeoutId = setTimeout(() => {
                         this.removeListener('nextFlip', nextFlipHandler);
                         disableOpenWindowListener(this.bot)
-                        log("Buy state finished", "sys")
+                        log("Finished buy state!", "sys")
                         resolve();
                     }, remainingTime);
                 });
@@ -131,7 +131,7 @@ class DynamicState extends EventEmitter {
             }
             case "claim": {
                 for(let auction of this.bot.claimPipeline) {
-                    log(`Attempting to claim ${auction.item_name}`, "sys")
+                    log(`Attempting to claim ${auction.item_name}`, "debug", true)
                     await claimAuction(this.bot, auction);
                     await sleep(800);
                 }
@@ -199,7 +199,7 @@ class DynamicState extends EventEmitter {
         }
         this.queue.splice(i, 1);
         if (this.internalState === "pipelined") {
-            log("Internal state is pipelined, restarting queue process!", "sys");
+            log("Internal state is pipelined, restarting queue process!", "debug", true);
             this.emit("restart");
             return;
         }
@@ -218,8 +218,8 @@ class DynamicState extends EventEmitter {
             } else {
             this.actionPipeline.push(action);
             this.internalState = "pipelined";
-            console.log("action pipeline")
             }
+        log(`Added ${action} to state queue!`, "debug")
         }
     }
 

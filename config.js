@@ -55,7 +55,7 @@ function verifyExists(key) {
 }
 
 function verifyExistsCustomization(key) {
-    if (!config["customization"][key] == null) {
+    if (config["customization"][key] == null) {
         console.error(`${key} is not set in config.json! Please set it and restart the bot.`);
         process.exit(1);
     }

@@ -26,7 +26,7 @@ async function handler(username) {
     await createListeners(bot)
     
     bot.flayer.once('login', async () => {
-        log(`Logged in as ${username}`, "sys");
+        log(`Logged in as ${username}`, "debug");
         let embed = await bot.hook.embed(`\`${username}\` Logged in!`, `**Successfully connected to Hypixel!**`, "white");
         embed.setThumbnail(`https://mc-heads.net/head/${bot.info['id']}`)
         await bot.hook.send(embed)

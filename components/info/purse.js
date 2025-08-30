@@ -12,7 +12,8 @@ async function extractPurse(bot, type = null, boughtPrice = null) {
         if (auction !== null) {
             purse = purse - boughtPrice;
         }
-   }
+    }
+    bot.stats.purse = purse;
     return purse;
 }
 

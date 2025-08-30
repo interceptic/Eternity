@@ -64,9 +64,9 @@ async function buy(bot) {
             if (window.windowTitle === '{"italic":false,"extra":[{"text":"BIN Auction View"}],"text":""}') {
                 log("Bin Auction View window opened", "sys", true)
                 const beforeLoad = Date.now()
-                log(`Bin window opened | elapsed: ${beforeLoad - bot.recieveTime}ms`, "sys")      
+                log(`Bin window opened | elapsed: ${beforeLoad - bot.recieveTime}ms`, "debug")      
                 let slot = await load(bot.flayer.currentWindow, 31)
-                log(`Slot loaded in ${Date.now() - beforeLoad}ms`, "sys")                
+                log(`Slot loaded in ${Date.now() - beforeLoad}ms`, "debug", true)                
                 log(`found item ${slot} at slot 31`, "sys", true)
                 bot.lastWindow = Date.now();
             if (slot === 'gold_nugget') {
@@ -110,7 +110,7 @@ async function buy(bot) {
 
             } else {
                 if (window) {
-                    console.log(`Closing window ${window.windowTitle}`)
+                    log(`Closing window ${window.windowTitle}`, "debug")
                     bot.flayer.closeWindow(window)
                     bot.state.emit("nextFlip")
                 } else {

@@ -30,7 +30,7 @@ async function mainEntry(bot) {
             log(`Will refresh when ${auction.item_name} ends!`, "sys", true)
             const timeout = setTimeout(() => {
                 log(`Adding relist of ${auction.item_name} to queue!`, "sys");
-                startRelist(bot)
+                startRelist(bot, auction.uuid)
             }, 30000 + (auction.end - currentTime)); 
             bot.listIntervals.push(timeout) // cleaned up on restart or world change -> island
         }

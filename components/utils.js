@@ -37,6 +37,7 @@ function log(message, struct = "base", hidden = false) {
         "sys": "\x1b[31m[SYSTEM]\x1b[0m ",
         "warn": "\x1b[93m[WARNING]\x1b[0m ",
         "special": "\n\x1b[31m[SYSTEM]\x1b[0m ", // only used once xD
+        "debug": "\x1b[96m[DEBUG]\x1b[0m ", // Light Cyan for debug messages
         "base": ""
     }
     base += colors[struct] + message;

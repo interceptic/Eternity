@@ -268,7 +268,7 @@ async function handleList(bot, auction, type) {
             const auctionExpiration = (((relistTime * 60) * 60) * 1000) // hour to ms
             const timeout = setTimeout(() => {
                 log(`Adding relist of ${auction.item_name} to queue!`, "sys");
-                startRelist(bot)
+                startRelist(bot, auction.uuid)
             }, 30000 + auctionExpiration);
             bot.listIntervals.push(timeout) 
 
@@ -384,7 +384,7 @@ async function handleSign(bot, value, window, auction) {
 
             const onPacket = (data, meta) => {
                 if (meta.name === 'update_sign') {
-                  console.log("Sign updated:", data);
+                  log("Sign updated!", "debug");
                   bot.flayer._client.removeListener('packet', onPacket); // remove listener once the sign is updated
                   resolve();
                   return;
@@ -434,10 +434,13 @@ async function handleSign(bot, value, window, auction) {
 }
 
 
-async function startRelist(bot) {
+async function startRelist(bot, uuid) {
     const { auctions, claimableAuctions, expiredAuctions } = await findAuctions(bot);
-    for (const auction of expiredAuctions) {
-        bot.relistPipeline.push(auction)
+    for (const expiredAuction of expiredAuctions) {
+        if (uuid === expiredAuction.uuid) {
+            bot.relistPipeline.push(expiredAuction)
+            break;
+        }
     }
     bot.state.emit("addToQueue", "relist")
 }
