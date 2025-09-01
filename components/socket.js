@@ -1,7 +1,7 @@
 const WebSocket = require('ws');
 const { log, styleText } = require('./utils');
 const EventEmitter = require('events');
-const { BMK } = require('./utils');
+const { BMK, cleanExit } = require('./utils');
 const fs = require('fs');
 const { randomUUID } = require('crypto');
 const { updateConfig, config } = require('../config.js');
@@ -11,7 +11,7 @@ class Socket {
         if (process.env.NODE_ENV === "dev") {
             if (config.modSocketID === "") {
                 console.error("Expected modSocketID in env, please apply before running in dev environment.")
-                process.exit(1)
+                cleanExit("No modSocketID in .env")
             }
             this.id = process.env.modSocketId;
         } else {
@@ -45,7 +45,7 @@ class Socket {
                         }
 
                         if (this.bot.waiting) {
-                            log("bot is considerded to be waiting for next flip")
+                            log("bot is considered to be waiting for next flip", "debug", true)
                             this.bot.state.emit("nextFlip");
                         }
 

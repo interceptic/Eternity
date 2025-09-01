@@ -1,5 +1,5 @@
 const fs = require('fs');
-const { log } = require("./components/utils")
+const { log, cleanExit } = require("./components/utils")
 const DEFAULT_CONFIG = {
     "webhook": "",
     "username": "",

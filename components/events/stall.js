@@ -1,6 +1,6 @@
 const { island } = require('../info/island')
 const { getLocraw } = require('../info/locraw')
-const { log, sleep } = require("../utils")
+const { log, sleep, cleanExit } = require("../utils")
 
 async function stall(bot) {
     // assuming bot is ended
@@ -100,7 +100,7 @@ async function restartBot(bot, reason) {
         } catch (error) {
             console.error("Error during restart:", error)
             // exit if failure to restart (fixes restart loop)
-            process.exit(1)
+            await cleanExit("Restart Error!")
         }
     }
 }

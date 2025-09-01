@@ -1,5 +1,6 @@
 const { WebhookClient, EmbedBuilder } = require('discord.js');
 const { config } = require('../config.js');
+const { version } = require("../package.json");
 
 class Webhook {
     constructor(bot) {
@@ -35,7 +36,7 @@ class Webhook {
 
 
     // create embed object which can be edited after creation
-    async embed(header, message, color = "white", footer = "Eternity v1.0.0-beta") {
+    async embed(header, message, color = "white", footer = `Eternity v${version}`) {
         color = this.colors[color]
         const emb = new EmbedBuilder()
             .setColor(color)

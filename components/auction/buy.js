@@ -16,7 +16,7 @@ function windowStats(bot, windowObj, type, winOpen, latestItem, latestPrice) {
     const priceLine = lore.find(line => line.includes("Price:"));
     const noColors = priceLine.replace(/§./g, "");    
     const price = parseInt(noColors.replace(/[^0-9]/g, ""), 10);    
-    log(`Price ${price}, Tag ${itemTag}`)
+    log(`Price ${price}, Tag ${itemTag}`, "debug", true)
     bot.holding[price][itemTag][0]["type"] = type
     bot.holding[price][itemTag][0]["tpmTime"] = winOpen
     handleMessageEvent(bot, price, itemTag, latestItem, latestPrice)

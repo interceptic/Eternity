@@ -98,8 +98,7 @@ async function handleMessageEvent(message, bot) {
             const profitPercent = ((afterTaxProfit / boughtPrice) * 100).toFixed(2);
             const values = Object.values(bot.holding[boughtPrice]);
             const element = values.find(e => e[0][0]?.type !== "Unknown");
-            log(JSON.stringify(values));
-            log(JSON.stringify(element));
+            log(JSON.stringify(element), "debug", true);
             let type = "Unknown";
             let tpmTime;
             if (element) {
@@ -140,7 +139,7 @@ async function handleMessageEvent(message, bot) {
             let accountString = "";
             accountString += `Current Slots: **[${bot.stats.activeSlots}/${bot.stats.totalSlots}]**\n`;
             accountString += `List Time: **${config.customization.listTime} hours**\n`;
-            accountString += `Purse: **${BMK(await extractPurse(bot, "claimItem", boughtPrice), 2)}**`;
+            accountString += `Purse: **${BMK(await extractPurse(bot, "claimItem", boughtPrice), 1)}**`;
 
 
             // bought[2] is price with commas

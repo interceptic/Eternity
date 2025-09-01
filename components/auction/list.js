@@ -2,7 +2,7 @@
 const axios = require('axios');
 const fs = require('fs');
 const { config } = require('../../config.js');
-const { log, sleep, BMK } = require("../utils")
+const { log, sleep, BMK, cleanExit } = require("../utils")
 const { load } = require("./buy");
 const { extractPurse } = require('../info/purse');
 
@@ -445,43 +445,104 @@ async function startRelist(bot, uuid) {
     bot.state.emit("addToQueue", "relist")
 }
 
-
+async function apiError(bot, error, type) {
+    let reason;
+    if (error.response) {
+        const status = error.response.status;
+        switch (status) {
+            case 403:
+                reason = `${type}: Invalid API key or key doesn't have required permissions`;
+                break;
+            case 429:
+                reason = `${type}: Rate limit exceeded, please wait before retrying`;
+                break;
+            case 500:
+                reason = `${type}: Internal server error`;
+                break;
+            case 503:
+                reason = `${type}: Service temporarily unavailable`;
+                break;
+            default:
+                reason = `${type}: HTTP ${status} - ${error.response.statusText}`;
+        }
+    } else if (error.request) {
+        reason = `${type}: Network error - no response received`;
+    } else {
+        log(`${type}: ${error.message} || report this to a developer if this continuosly occurs`, "warn");
+    }
+    log(reason, "warn")
+    const embed = await bot.hook.embed("API Error", `**${reason}.**`, "red")
+    await bot.hook.send(embed);
+    await cleanExit(reason)
+}
 
 async function fetchProfile(bot) {
     try {
         const { data } = await axios.get(`https://api.hypixel.net/v2/skyblock/profiles?uuid=${bot.info.id}&key=${config.apiKey}`);
+        
+        if (data.success === false) {
+            log(`Hypixel API Error: ${data.cause || 'Unknown error'}`, "warn");
+            throw new Error(`Hypixel API Error: ${data.cause || 'Unknown error'}`);
+        }
+        
         const profile = data.profiles.find(profile => profile.selected);
+        if (!profile) {
+            log("No selected profile found in Hypixel response", "warn");
+            throw new Error("No selected profile found");
+        }
+        
         fs.writeFileSync('./profileData.json', JSON.stringify(profile, null, 2));
         return profile;
     } catch (error) {
-        console.error('Failed to fetch profile:', error);
-        throw error;
+        await apiError(bot, error, "Unable to fetch player profiles")
     }
 }
 
 async function fetchAuctions(profile_id) {
-    const { data } = await axios.get(`https://api.hypixel.net/v2/skyblock/auction?profile=${profile_id}&key=${config.apiKey}`)
-    const auctions = data.auctions.filter(({claimed}) => !claimed)
-    const claimableAuctions = auctions.filter(auction => auction.highest_bid_amount > 0 && auction.bin)
-    const expiredAuctions = auctions.filter(auction => auction.end < Date.now() && auction.highest_bid_amount === 0 && auction.bin)
-    fs.writeFileSync('./auctionData.json', JSON.stringify(data, null, 2));
+    try {
+        const { data } = await axios.get(`https://api.hypixel.net/v2/skyblock/auction?profile=${profile_id}&key=${config.apiKey}`);
+        
+        if (data.success === false) {
+            log(`Hypixel API Error: ${data.cause || 'Unknown error'}`, "warn");
+            throw new Error(`Hypixel API Error: ${data.cause || 'Unknown error'}`);
+        }
+        
+        const auctions = data.auctions.filter(({claimed}) => !claimed);
+        const claimableAuctions = auctions.filter(auction => auction.highest_bid_amount > 0 && auction.bin);
+        const expiredAuctions = auctions.filter(auction => auction.end < Date.now() && auction.highest_bid_amount === 0 && auction.bin);
+        fs.writeFileSync('./auctionData.json', JSON.stringify(data, null, 2));
 
-    return { auctions, claimableAuctions, expiredAuctions };
+        return { auctions, claimableAuctions, expiredAuctions };
+    } catch (error) {
+        await apiError(bot, error, "Unable to fetch auctions")
+    }
 }
 // this is skidded sorry 
 async function fetchCoop(profile) {
-    const allMembers = Object.keys(profile.members)
+    const allMembers = Object.keys(profile.members);
     let activeCount = 0;
+    
     for(const coopMember of allMembers) {
         if (!coopMember || coopMember === 0) {
-            log(`Skipping undefined uuid`, "warn")
-            continue
+            log(`Skipping undefined uuid`, "warn");
+            continue;
         }
-        const {data} = await axios.get(`https://api.hypixel.net/v2/skyblock/profiles?uuid=${coopMember}&key=${config.apiKey}`)
-        if (data.profiles) {
-            if (data.profiles.find(({profile_id}) => profile_id === profile.profile_id)) {
-                activeCount++
+        
+        try {
+            const {data} = await axios.get(`https://api.hypixel.net/v2/skyblock/profiles?uuid=${coopMember}&key=${config.apiKey}`);
+            
+            if (data.success === false) {
+                log(`Hypixel API Error for coop member ${coopMember}: ${data.cause || 'Unknown error'}`, "warn");
+                continue;
             }
+            
+            if (data.profiles) {
+                if (data.profiles.find(({profile_id}) => profile_id === profile.profile_id)) {
+                    activeCount++;
+                }
+            }
+        } catch (error) {
+            await apiError(bot, error, "Unable to fetch Co-op profiles")
         }
     }
     return activeCount;

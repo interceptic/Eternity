@@ -114,4 +114,13 @@ function styleText(message) {
     return message + colors['§r']; // reset at the end
 }
 
-module.exports = { sleep, BMK, log, styleText};
+async function cleanExit(reason) {
+    if (global.bot) {
+        const embed = reason === "manual" ? await global.bot.hook.embed("Manually Stopped Process", `Stopping ${global.bot.info['name']}!\n\n**Bot ran for ${Math.floor((Date.now() - startTime) / 60000)} minutes!**`, "red")
+        : await global.bot.hook.embed("System Stopped Process", `Stopping ${global.bot.info['name']} for reason: **${reason}**!\n\n**Bot ran for ${Math.floor((Date.now() - startTime) / 60000)} minutes!**`, "red");
+        await global.bot.hook.send(embed);
+        await sleep(100); // seems to add an additional bit of grace for the webhook to send
+    }
+    reason === "manual" ? process.exit(0) : process.exit(1);
+}
+module.exports = { sleep, BMK, log, styleText, cleanExit};
