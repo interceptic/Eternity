@@ -57,4 +57,4 @@ function askUser() {
 
 
 
-module.exports = { askUser }
+module.exports = { askUser, rl }

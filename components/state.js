@@ -108,6 +108,7 @@ class DynamicState extends EventEmitter {
                         timeoutId = setTimeout(() => {
                             this.removeListener('nextFlip', nextFlipHandler);
                             disableOpenWindowListener(this.bot)
+                            this.bot.waiting = false;
                             log("Buy state finished", "sys")
                             if (resolvePromise) resolvePromise();
                         }, remainingTime - elapsed);
@@ -123,6 +124,7 @@ class DynamicState extends EventEmitter {
                     timeoutId = setTimeout(() => {
                         this.removeListener('nextFlip', nextFlipHandler);
                         disableOpenWindowListener(this.bot)
+                        this.bot.waiting = false;
                         log("Finished buy state!", "sys")
                         resolve();
                     }, remainingTime);
