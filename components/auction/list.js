@@ -384,7 +384,7 @@ async function handleSign(bot, value, window, auction) {
 
             const onPacket = (data, meta) => {
                 if (meta.name === 'update_sign') {
-                  log("Sign updated!", "debug");
+                  log("Sign updated!", "debug", true);
                   bot.flayer._client.removeListener('packet', onPacket); // remove listener once the sign is updated
                   resolve();
                   return;

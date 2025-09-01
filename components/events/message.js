@@ -41,17 +41,17 @@ async function handleMessageEvent(message, bot) {
         // claim[1] is coin amount, [2] is item name, [3] is username
         
         if (claim) {
-            log("claimed message recieved", "sys", true)
-            log(JSON.stringify(bot.claimCell), "sys", true);
-            const price = claim[1]
-            const itemName = claim[2]
-            const username = claim[3]
+            log("claimed message recieved", "debug", true);
+            log(JSON.stringify(bot.claimCell), "debug", true);
+            const price = claim[1];
+            const itemName = claim[2];
+            const username = claim[3];
             let embed = await bot.hook.embed("Claimed Sold Item!", `Collected \`${price} coins\` for selling \`${itemName}\` to \`${username}\` [(click)](https://sky.coflnet.com/auction/${bot.claimCell[itemName][price.replace(/,/g, '')]})`, "blue")
             bot.stats.activeSlots--;
             await new Promise(resolve => setTimeout(resolve, 1200))
             purse = await extractPurse(bot);
-            embed.setFooter({text: `Eternity | ${BMK(purse, 1)} Coin Purse`, iconURL: "https://cdn.discordapp.com/attachments/1340811695769124914/1341163186715623474/image_1.png?ex=67b4ff0d&is=67b3ad8d&hm=26a2179b1f7709cf56aa0dfe713ea8049bc2c91857d9e03b343dab44f52ad693&"})
-            await bot.hook.send(embed)
+            embed.setFooter({text: `Eternity | ${BMK(purse, 1)} Coin Purse`, iconURL: "https://cdn.discordapp.com/attachments/1340811695769124914/1341163186715623474/image_1.png?ex=67b4ff0d&is=67b3ad8d&hm=26a2179b1f7709cf56aa0dfe713ea8049bc2c91857d9e03b343dab44f52ad693&"});
+            await bot.hook.send(embed);
         }
         
 
@@ -83,23 +83,23 @@ async function handleMessageEvent(message, bot) {
             const boughtPrice = bought[2].replace(/,/g, ''); // number without commas (price)
             if (!bot.holding[itemName] || !bot.holding[itemName][boughtPrice] || !bot.holding[itemName][boughtPrice][0]) {
                 console.log(bot.holding);
-                log("Failed to handle bought auction! Please report this!", "sys")
+                log("Failed to handle bought auction! Please report this!", "sys");
                 return;
             }
             const estimatedSellPrice = bot.holding[itemName][boughtPrice][0].target;
-            log(JSON.stringify(bot.holding[itemName][boughtPrice][0]))
-            const id = bot.holding[itemName][boughtPrice][0].id
-            const completeTime = time - bot.holding[itemName][boughtPrice][0].recieveTime
-            const finder =  bot.holding[itemName][boughtPrice][0].finder
-            const afterTaxProfit = handleTaxList(boughtPrice, estimatedSellPrice)
+            log(JSON.stringify(bot.holding[itemName][boughtPrice][0]), "debug", true);
+            const id = bot.holding[itemName][boughtPrice][0].id;
+            const completeTime = time - bot.holding[itemName][boughtPrice][0].recieveTime;
+            const finder =  bot.holding[itemName][boughtPrice][0].finder;
+            const afterTaxProfit = handleTaxList(boughtPrice, estimatedSellPrice);
             const beforeTaxProfit = estimatedSellPrice - boughtPrice;
             const taxAmount = beforeTaxProfit - afterTaxProfit;
             bot.holding[itemName][boughtPrice].shift(); // remove element 0 to remove flip overlap
-            const profitPercent = ((afterTaxProfit / boughtPrice) * 100).toFixed(2)
+            const profitPercent = ((afterTaxProfit / boughtPrice) * 100).toFixed(2);
             const values = Object.values(bot.holding[boughtPrice]);
             const element = values.find(e => e[0][0]?.type !== "Unknown");
-            log(JSON.stringify(values))
-            log(JSON.stringify(element))
+            log(JSON.stringify(values));
+            log(JSON.stringify(element));
             let type = "Unknown";
             let tpmTime;
             if (element) {

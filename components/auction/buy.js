@@ -29,7 +29,7 @@ function handleMessageEvent(bot, price, tag, latestItem, latestPrice) {
         if (position === "game_info") return;
         const listenerMessage = message.toAnsi()
         if (listenerMessage.includes("Putting coins in escrow...") && !checked) {
-            log(bot.holding[price][tag][0]["tpmTime"])
+            log(`First window time: ${bot.holding[price][tag][0]["tpmTime"]}`, "debug", true)
             if (bot.holding[price][tag][0]["tpmTime"] > 10000)  {// if not already processed 
             bot.holding[price][tag][0]["tpmTime"] = Date.now() - bot.holding[price][tag][0]["tpmTime"]
             }
@@ -91,14 +91,14 @@ async function buy(bot) {
                 // bot.hook.send("Opened Window + Attempting Click on Slot 11", `test...`,)
                 log("Opened Confirm Purchase Window", "sys", true)
                 let confirmWindow = Date.now()
-                log(`Confirm window opened | Since last window: ${confirmWindow - bot.lastWindow} | Elapsed: ${confirmWindow - bot.recieveTime}ms`, "sys")                
+                log(`Confirm window opened | Since last window: ${confirmWindow - bot.lastWindow} | Elapsed: ${confirmWindow - bot.recieveTime}ms`, "debug")                
                 
                 let slot = await load(bot.flayer.currentWindow, 11)
                 log("Slot 11 loaded!", "sys", true)
                 let count = 0;
                 while (bot.flayer.currentWindow && count < 2) {
                 bot.betterClick(11, 0, 0);
-                log(`recognizing click at time ${Date.now() - confirmWindow}ms`, "sys")                
+                log(`recognizing click at time ${Date.now() - confirmWindow}ms`, "debug", true)                
                 count++;
                 }
                 

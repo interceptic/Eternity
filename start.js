@@ -26,8 +26,12 @@ async function main() {
 
 askUser(); // handle console
 
+
+let closing = false;
 // readline for askUser
 rl.on('SIGINT', async () => {
+    if(closing) return;
+    closing = true;
     log('Stopping Process!', "special"); // adds a \n before any ansi
     rl.close();
     await handleClose();
@@ -35,6 +39,8 @@ rl.on('SIGINT', async () => {
 
 // if readline doesnt exist (shouldnt pass)
 process.on('SIGINT', async () => {
+    if(closing) return;
+    closing = true;
     log('Stopping Process!', "special");
     await handleClose();
 });
