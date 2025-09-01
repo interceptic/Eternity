@@ -3,7 +3,7 @@ const { config, configEntry } = require("./config.js");
 const { askUser, rl } = require("./components/console");
 const { log, sleep, cleanExit } = require("./components/utils");
 const startTime = Date.now();
-const { version } = require("../package.json");
+const { version } = require("./package.json");
 
 process.env.NODE_ENV = process.env.NODE_ENV || "main";
 process.env.NODE_NO_WARNINGS = process.env.NODE_NO_WARNINGS || "1";
