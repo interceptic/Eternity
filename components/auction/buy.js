@@ -39,6 +39,10 @@ function handleMessageEvent(bot, price, tag, latestItem, latestPrice) {
         if(listenerMessage.includes("You purchased")) {
             purchased = true;
             clearTimeout(timeout);
+            // Convert tpmTime before removing listener if not already done
+            if (!checked && bot.holding[price][tag][0]["tpmTime"] > 10000) {
+                bot.holding[price][tag][0]["tpmTime"] = Date.now() - bot.holding[price][tag][0]["tpmTime"];
+            }
             bot.flayer.removeListener('message', messageListener);
         }
         if(listenerMessage.includes("There was an error") && !purchased) {

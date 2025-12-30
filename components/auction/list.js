@@ -141,6 +141,7 @@ async function handleList(bot, auction, type) {
             try {
                 await handleSign(bot, "auctionListTime", window, auction);
             } catch (error) {
+                cleanup();
                 reject(`HandleSign Time | ${error}`);
                 return;
             }
@@ -159,6 +160,7 @@ async function handleList(bot, auction, type) {
                             if (!actualPrice.includes(expectedPrice)) {
                                 log(`Expected list price failed ${priceSlot}`, "sys", true);
                                 log(`Price mismatch detected for ${auction.item_name} - Expected: ${expectedPrice}, Got: ${actualPrice}`, "warn");
+                                cleanup();
                                 reject("Price mismatch")
                                 return;
                             } else {
@@ -170,11 +172,13 @@ async function handleList(bot, auction, type) {
                         const interval = setInterval(checkPriceSlot, 250);
                         setTimeout(() => {
                             clearInterval(interval);
+                            cleanup();
                             reject("Price validation timeout");
                         }, 5000);
                     });
                 } catch (err) {
                     log(`Failed to list: ${err}`, "warn");
+                    cleanup();
                     reject(err);
                     return; 
                 }
@@ -210,6 +214,7 @@ async function handleList(bot, auction, type) {
                     const newPrice = await getNewPrice(bot, auction)
                         .catch(err => {
                             log(`Failed to get new price: ${err}`, "warn");
+                            cleanup();
                             reject(err)
                             return
                         });
@@ -224,6 +229,7 @@ async function handleList(bot, auction, type) {
                 // Validate the price
                 if (isNaN(finalPrice) || finalPrice <= 0) {
                     log(`Invalid price calculated: ${finalPrice} for item ${auction.item_name}`, "warn");
+                    cleanup();
                     reject("Invalid price error");
                     return;
                 }
@@ -237,6 +243,7 @@ async function handleList(bot, auction, type) {
                 try {
                     await handleSign(bot, "auctionSellPrice", window, auction);
                 } catch (error) {
+                    cleanup();
                     reject(`HandleSign Price | ${error}`);
                     return;
                 }        
@@ -478,6 +485,7 @@ async function apiError(bot, error, type) {
 
 async function fetchProfile(bot) {
     try {
+        console.log(bot.info.id)
         const { data } = await axios.get(`https://api.hypixel.net/v2/skyblock/profiles?uuid=${bot.info.id}&key=${config.apiKey}`);
         
         if (data.success === false) {
@@ -494,6 +502,7 @@ async function fetchProfile(bot) {
         fs.writeFileSync('./profileData.json', JSON.stringify(profile, null, 2));
         return profile;
     } catch (error) {
+        console.log(error)
         await apiError(bot, error, "Unable to fetch player profiles")
     }
 }

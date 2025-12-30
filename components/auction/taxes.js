@@ -26,7 +26,7 @@ function listWithoutTarget(price) {
 
 function handleTaxClaim(profit) {
     if (profit < 1000000) return profit; // under 1 mil no 1% tax?
-    return profit * .99;
+    return profit * .98;
 }
 
 module.exports = { handleTaxList, handleTaxClaim, listWithoutTarget}

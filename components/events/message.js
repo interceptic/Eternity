@@ -93,7 +93,7 @@ async function handleMessageEvent(message, bot) {
             const finder =  bot.holding[itemName][boughtPrice][0].finder;
             const afterTaxProfit = handleTaxList(boughtPrice, estimatedSellPrice);
             const beforeTaxProfit = estimatedSellPrice - boughtPrice;
-            const taxAmount = beforeTaxProfit - afterTaxProfit;
+            const taxAmount = Math.round(beforeTaxProfit - afterTaxProfit);
             bot.holding[itemName][boughtPrice].shift(); // remove element 0 to remove flip overlap
             const profitPercent = ((afterTaxProfit / boughtPrice) * 100).toFixed(2);
             const values = Object.values(bot.holding[boughtPrice]);

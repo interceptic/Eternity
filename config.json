@@ -4,6 +4,7 @@
   "modSocketID": "",
   "notificationHook": "",
   "apiKey": "",
+  "cleanConsole": true,
   "fragbot": {
     "hollows": false,
     "mines": false,
