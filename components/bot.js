@@ -1,5 +1,5 @@
 const { createBot } = require("mineflayer");
-const { sleep, BMK, log, styleText } = require("./utils");
+const { sleep, BMK, log, styleText, initOutputHook } = require("./utils");
 const { makePackets } = require("./clientPackets");
 const { userInfo } = require("./info/user");
 const DynamicState = require("./state");
@@ -17,7 +17,9 @@ const { config } = require('../config.js');
 
 
 
+
 async function handler(username) {
+    await initOutputHook(config.notificationHook);
     // object super important
     const bot = await Unit.create(username)
     global.bot = bot;

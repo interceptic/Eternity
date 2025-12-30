@@ -485,7 +485,6 @@ async function apiError(bot, error, type) {
 
 async function fetchProfile(bot) {
     try {
-        console.log(bot.info.id)
         const { data } = await axios.get(`https://api.hypixel.net/v2/skyblock/profiles?uuid=${bot.info.id}&key=${config.apiKey}`);
         
         if (data.success === false) {

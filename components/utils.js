@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const OutputHook = require('./notiHook.js')
 
 
 // Where to place log file
@@ -29,9 +30,17 @@ fs.appendFileSync(logFile, `Process started at ${startTime.toString()}\n`);
     };
 });
 
+let outputHook;
 
-function log(message, struct = "base", hidden = false) {
-    // string concatenation basically    
+async function initOutputHook(hook) {
+    outputHook = new OutputHook(hook);
+    await outputHook.init();
+    return;
+}
+
+async function log(message, struct = "base", hidden = false) {
+    // string concatenation basically 
+    let cleanMessage;   
     let base = ''
     const colors = {
         "sys": "\x1b[31m[SYSTEM]\x1b[0m ",
@@ -41,18 +50,23 @@ function log(message, struct = "base", hidden = false) {
         "base": ""
     }
     base += colors[struct] + message;
+    if (typeof message !== 'string') { // shouldnt pass but just in case
+        base = base.toString();
+    }
+    cleanMessage = base.replace(/\x1b\[[0-9;]*m/g, '');
     if (hidden) { // log but dont print to console
-        if (typeof message !== 'string') { // shouldnt pass but just in case
-            base = base.toString();
-        }
-        const cleanMessage = base.replace(/\x1b\[[0-9;]*m/g, '');
         fs.appendFileSync(logFile, cleanMessage + '\n');
         return;
     };
     console.log(base);
+    if (outputHook) {
+        await outputHook.update(cleanMessage);
+    }
     return;
 
 }
+
+
 
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
@@ -123,4 +137,4 @@ async function cleanExit(reason) {
     }
     reason === "manual" ? process.exit(0) : process.exit(1);
 }
-module.exports = { sleep, BMK, log, styleText, cleanExit};
+module.exports = { sleep, BMK, log, styleText, cleanExit, initOutputHook };

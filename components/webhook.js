@@ -8,7 +8,7 @@ class Webhook {
 
         this.uuid = bot.info['id']
         this.colors = {
-            "red": "#ff786e",
+            "red": "#b22222",
             "yellow": "#ffc954",
             "green": "#7cff6e",
             "black": "#000000",

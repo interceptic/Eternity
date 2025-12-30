@@ -25,6 +25,7 @@ const DEFAULT_CONFIG = {
 let env = {
     "apiKey": "",
     "webhook": "",
+    "notificationHook": "",
     "username": "",
     "modSocketId": "",
     "customization": {
@@ -33,9 +34,9 @@ let env = {
     }
 }
 
-const mainItems = ["apiKey", "webhook", "username", "modSocketID"];
+const mainItems = ["apiKey", "webhook", "username", "modSocketID", "notificationHook"];
 const customizationItems = ["listTime"];
-const warningItems = ["webhook"]
+const warningItems = ["webhook", "notificationHook"]
 
 let config = DEFAULT_CONFIG;
 
@@ -132,6 +133,7 @@ async function configEntry(dev = false) {
             verifyExists("username");
             verifyExists("apiKey");
             verifyExistsCustomization("listTime");
+            warnExists("notificationHook");
             warnExists("webhook");
             resolve();
             return;

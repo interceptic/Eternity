@@ -84,13 +84,13 @@ class Socket {
                         break;
                     case "chatMessage":
                         if (data[1] && data[1]["text"]) {
-                            console.log(styleText(data[0]["text"] + data[1]["text"]));
+                            log(styleText(data[0]["text"] + data[1]["text"]), "base")
                         } else {
-                            console.log(styleText(data[0]["text"]));
+                            log(styleText(data[0]["text"]), "base");
                         }
                         break;
                     case "writeToChat":
-                        console.log(styleText(data["text"]));
+                        log(styleText(data["text"]), "base");
                         break;
                 }
             } catch (error) {
