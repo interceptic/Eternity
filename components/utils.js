@@ -32,9 +32,9 @@ fs.appendFileSync(logFile, `Process started at ${startTime.toString()}\n`);
 
 let outputHook;
 
-async function initOutputHook(hook) {
+async function initOutputHook(hook, username) {
     outputHook = new OutputHook(hook);
-    await outputHook.init();
+    await outputHook.init(username);
     return;
 }
 
@@ -60,7 +60,7 @@ async function log(message, struct = "base", hidden = false) {
     };
     console.log(base);
     if (outputHook) {
-        await outputHook.update(cleanMessage);
+        await outputHook.updateOutput(base);
     }
     return;
 

@@ -19,13 +19,14 @@ const { config } = require('../config.js');
 
 
 async function handler(username) {
-    await initOutputHook(config.notificationHook);
     // object super important
     const bot = await Unit.create(username)
     global.bot = bot;
     
     bot.state.setState("starting")
     await createListeners(bot)
+    await initOutputHook(config.notificationHook, config.username);
+
     
     bot.flayer.once('login', async () => {
         log(`Logged in as ${username}`, "debug");

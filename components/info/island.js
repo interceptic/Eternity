@@ -16,7 +16,8 @@ async function island(bot, locraw, restartFunction) {
             if (position === "game_info") return;
             if (message.toAnsi().toLowerCase().includes('kicked')
                 || message.toAnsi().toLowerCase().includes('problem')
-                || message.toAnsi().toLowerCase().includes("cannot join")) {
+                || message.toAnsi().toLowerCase().includes("cannot join")
+                || message.toAnsi().toLowerCase().includes("try again")) {
                 bot.flayer.removeListener('message', messageListener);
                 await sleep(2500)
                 await restartFunction(bot, message.toAnsi().replace(/\x1b\[[0-9;]*m/g, ''));

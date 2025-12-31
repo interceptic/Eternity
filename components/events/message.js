@@ -11,6 +11,21 @@ const { claimItem } = require('../auction/list.js');
 const listRegex = /^(.+?) created (.+?) for (.+?) at ([\d,]+) coins!$/
 const listRegex2 = /^(.+?) listed (.+?) for (.+?) at ([\d,]+) coins!$/
 
+function addOrdinalSuffix(i) {
+    var j = i % 10,
+        k = i % 100;
+    if (j == 1 && k != 11) {
+        return i + "st";
+    }
+    if (j == 2 && k != 12) {
+        return i + "nd";
+    }
+    if (j == 3 && k != 13) {
+        return i + "rd";
+    }
+    return i + "th";
+}
+
 
 async function createMessageEvent(bot) {
     bot.flayer.on('message', async (message, position) => {
@@ -148,20 +163,6 @@ async function handleMessageEvent(message, bot) {
             embed.setURL(`https://sky.coflnet.com/auction/${id}`)
             embed.addFields({name: "Economics", value: econString, inline: true}, {name: "Statistics", value: statString, inline: true}, {name: "Additional", value: accountString, inline: false})
             if (bot.listPipeline.length > 0 && (bot.stats.activeSlots === bot.stats.totalSlots || bot.stats.activeSlots + bot.listPipeline.length > bot.stats.totalSlots)) {
-                function addOrdinalSuffix(i) {
-                    var j = i % 10,
-                        k = i % 100;
-                    if (j == 1 && k != 11) {
-                        return i + "st";
-                    }
-                    if (j == 2 && k != 12) {
-                        return i + "nd";
-                    }
-                    if (j == 3 && k != 13) {
-                        return i + "rd";
-                    }
-                    return i + "th";
-                }
                 const queue = bot.stats.activeSlots === bot.stats.totalSlots ? bot.listPipeline.length : bot.stats.activeSlots + bot.listPipeline.length - bot.stats.totalSlots
                 embed.addFields({name: "Auction House Full", value: `All slots are currently active...\n**This item is ${addOrdinalSuffix(queue)} in queue.**`, inline: false})
             }
@@ -169,7 +170,7 @@ async function handleMessageEvent(message, bot) {
 
             bot.state.emit("addToQueue", "list")
         }   
-
+    }
 
         // const listMessage = string.match(listRegex)
         // if (listMessage) {
@@ -182,8 +183,6 @@ async function handleMessageEvent(message, bot) {
         //     let embed = await bot.hook.embed("Listed Auction", `Listed ${listMessage2[3]} for ${listMessage2[4]} coins!`, "lightBlue")
         //     await bot.hook.send(embed)
         // }
-
-    }
 
 async function dwarvBot(event, bot) {
     if((event.includes("goblin raid") || event.includes("mithril gourmand") || event.includes("raffle")) && event.includes("starts in")) {
