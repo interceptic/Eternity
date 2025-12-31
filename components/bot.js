@@ -1,5 +1,5 @@
 const { createBot } = require("mineflayer");
-const { sleep, BMK, log, styleText, initOutputHook } = require("./utils");
+const { sleep, fetchDelay, log, fetchPing, initOutputHook } = require("./utils");
 const { makePackets } = require("./clientPackets");
 const { userInfo } = require("./info/user");
 const DynamicState = require("./state");
@@ -25,7 +25,7 @@ async function handler(username) {
     
     bot.state.setState("starting")
     await createListeners(bot)
-    await initOutputHook(config.notificationHook, config.username);
+    await initOutputHook(config.notificationHook, bot);
 
     
     bot.flayer.once('login', async () => {
@@ -37,7 +37,20 @@ async function handler(username) {
         const stallInterval = setInterval(async () => {
             await stall(bot);
         }, 30000); // 30s heartbeat interval
-        bot.intervals = [stallInterval]; // remove when restarting bot
+        bot.intervals.push(stallInterval);
+
+        const pingInterval = setInterval(async () => {
+            await sleep(60000); // additional grace
+            await fetchPing();
+        },  15 * 60 * 1000 ); // 15 min interval
+        bot.intervals.push(pingInterval); 
+
+        const delayInterval = setInterval(async () => {
+            await fetchDelay(bot)
+        }, 5 * 60 * 1000) // 5 min interval
+        bot.intervals.push(delayInterval); 
+
+
     });
 
     // tpm higher level function click
@@ -65,10 +78,19 @@ class Unit {
             purse: null,
             profit: null,
             exp: null,
-            profitPerHour: null,
             activeSlots: null,
-            hourlyProfit: null,      
+            hourlyProfit: [],  
+            totalProfit: 0,    
             totalSlots: null,
+            startTime: Date.now(),
+            delay: {
+                value: 0,
+                lastUpdate: Date.now()
+            },
+            ping: {
+                values: [],
+                lastUpdate: Date.now()
+            }
             
         };
         this.holding = {};

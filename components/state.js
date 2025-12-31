@@ -2,7 +2,7 @@ const { claimAuction } = require("./auction/main");
 const { sleep, log } = require("./utils");
 const EventEmitter = require('events');
 const { buy, disableOpenWindowListener } = require("./auction/buy");
-const { styleText, BMK } = require("./utils");
+const { styleText, BMK, fetchDelay } = require("./utils");
 const { claimItem } = require("./auction/list")
 const Socket = require('./socket')
 
@@ -71,6 +71,8 @@ class DynamicState extends EventEmitter {
                 let resolvePromise = null;
                 
                 const nextFlipHandler = () => {
+                    // remove prev listener
+                    this.bot.flayer.removeListener('message', this.messageListener);
                     this.bot.flayer.on('message', this.messageListener);
                     if (this.bot.auctionPipeline.length > 0) {
                         const auction = this.bot.auctionPipeline[0]
@@ -126,6 +128,7 @@ class DynamicState extends EventEmitter {
                         disableOpenWindowListener(this.bot)
                         this.bot.waiting = false;
                         log("Finished buy state!", "sys")
+                        bot.state.emit("addToQueue", "checkDelay")
                         resolve();
                     }, remainingTime);
                 });
@@ -197,6 +200,10 @@ class DynamicState extends EventEmitter {
                 this.bot.socket = new Socket(this.bot);
                 this.bot.socket.open()
                 }
+                break;
+            }
+            case "checkDelay": {
+                await fetchDelay(this.bot);
             }
         }
         this.queue.splice(i, 1);

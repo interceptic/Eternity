@@ -26,6 +26,11 @@ class Socket {
         this.bot = bot;
     }
     connect() {
+        if (this.ws) {
+            this.ws.removeAllListeners();
+        }
+
+
         this.ws = new WebSocket(this.link); //autoflipper socket   
         this.ws.on('message', (response) => {
             // convert buffer to string and parse JSON

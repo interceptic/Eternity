@@ -2,7 +2,7 @@ const boughtRegex = /^You purchased (.+?) for ([\d,]+) coins!$/; // //thx henry?
 const claimRegex = /You collected ([\d,]+) coins from selling (.+?) to (.+?) in an auction!/;
 const fs = require('fs');
 const { config } = require('../../config.js');
-const { sleep, BMK, log, styleText } = require("../utils");
+const { sleep, BMK, log, updateStats } = require("../utils");
 const { handleTaxList, handleTaxClaim } = require('../auction/taxes')
 const soldRegex = /^\[Auction\] (.+?) bought (.+?) for ([\d,]+) coins CLICK$/; //thx henry :)
 const { claimAuction } = require("../auction/main")
@@ -166,7 +166,15 @@ async function handleMessageEvent(message, bot) {
                 const queue = bot.stats.activeSlots === bot.stats.totalSlots ? bot.listPipeline.length : bot.stats.activeSlots + bot.listPipeline.length - bot.stats.totalSlots
                 embed.addFields({name: "Auction House Full", value: `All slots are currently active...\n**This item is ${addOrdinalSuffix(queue)} in queue.**`, inline: false})
             }
+            bot.stats.hourlyProfit.push(afterTaxProfit);
+            bot.stats.totalProfit += afterTaxProfit;
+            setTimeout(() => {
+                bot.stats.hourlyProfit.shift();
+            }, 60 * 60 * 1000);
+            await updateStats();
             await bot.hook.send(embed)
+
+
 
             bot.state.emit("addToQueue", "list")
         }   

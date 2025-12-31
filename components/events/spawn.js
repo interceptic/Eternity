@@ -6,6 +6,9 @@ const { mainEntry } = require('../auction/main')
 const Socket = require('../socket')
 
 async function onSpawn(bot) {
+    // remove prev listeners to prevent duplicates
+    bot.flayer.removeAllListeners('spawn');
+    
     bot.flayer.on('spawn', async () => {
         const state = bot.state.getState();
         await sleep(600)
