@@ -11,7 +11,7 @@ async function stall(bot) {
     }
 
     // below segment handles stall
-    if (Date.now() - bot.lastAction > 900000) { // 15 min no window / action
+    if (Date.now() - bot.lastAction > 45 * 60 * 1000) { // 45 min no window / action
         if (bot.stallCalls > 0) { // went through the stall checks and issue not fixed
             console.log("Probably stalled - attempting restart...")
             let embed = await bot.hook.embed("Stall Suspected", `${bot.info['name']} hasn't opened a window in the past 15 minutes`, "red")
@@ -83,8 +83,8 @@ async function restartBot(bot, reason) {
             }
 
             if (bot.listIntervals) {
-                bot.intervals.forEach(intervalId => {
-                    clearInterval(intervalId);
+                bot.listIntervals.forEach(intervalId => {
+                    clearTimeout(intervalId);
                 });
             }
 

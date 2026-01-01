@@ -53,7 +53,9 @@ async function fetchDelay(bot) {
         let timeout;
         function cleanup() {
             clearTimeout(timeout);
-            bot.socket.ws.removeListener('message', coflListener);
+            if(bot.socket) {
+                bot.socket.ws.removeListener('message', coflListener)
+            }
             resolve();
             return;
         }
@@ -76,8 +78,11 @@ async function fetchDelay(bot) {
         bot.socket.ws.on('message', coflListener);
         bot.socket.send(msg)
         timeout = setTimeout( () => {
-            bot.socket.ws.removeListener('message', coflListener);
-            bot.stats.delay.value = -1;
+            
+            if(bot.socket) {
+                bot.socket.ws.removeListener('message', coflListener)
+                bot.stats.delay.value = -1
+            };
             resolve();
             return;
         }, 2000);

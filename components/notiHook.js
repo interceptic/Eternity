@@ -1,33 +1,60 @@
 const { WebhookClient, EmbedBuilder } = require('discord.js');
+const fs = require('fs');
+const path = require('path');  // ← ADD THIS LINE
+
 
 class OutputHook {
     constructor(webhookURL, botRef) {
-        this.webhookClient =  new WebhookClient({ url: webhookURL })
+        this.webhookURL =  webhookURL;
         this.recentLog = [];
-        this.statsMessage = null;
-        this.outputMessage = null; 
+        this.statsMessage = {};
+        this.outputMessage = {}; 
         this.bot = botRef;
     }
 
 
     async init() {
-        const startUnix = calcUnix(this.bot.stats.startTime);
-        const pingUnix = calcUnix(this.bot.stats.ping.lastUpdate);
-        const delayUnix = calcUnix(this.bot.stats.delay.lastUpdate);
-        const ProfitPerHour = BMK(this.bot.stats.hourlyProfit.reduce((acc, value) => acc + value, 0));
-        const averagePing = this.bot.stats.ping.values.reduce((acc, value) => acc + value, 0);
-        const statsEmbed = await this.embed(`\`${this.bot.info['name']}\` Runtime Statistics`, `***Started <t:${startUnix}:R>***\n\n**Profit/h:** ${ProfitPerHour}  | **Total:** ${BMK(this.bot.stats.totalProfit)}\n\n**Average Ping:** ~${averagePing}ms (${this.bot.stats.ping.values.length}) | (Last Update: <t:${pingUnix}:R>)\n\n **Delay:**  ${Math.floor(this.bot.stats.delay.value * 1000)}ms (Last Update: <t:${delayUnix}:R>)
-`, 0xe7ffeb, "Eternity", true);
-        
-        statsEmbed.setAuthor({
-            name: `discord.gg/skyternity`,
-            iconURL: `https://cdn.discordapp.com/attachments/1455682430710186155/1456033797316546797/1818px-Discord_Logo_sans_texte.png?ex=6956e4a5&is=69559325&hm=40c0e358eb3f5d49a3ed4c4e04edec87be2afa3cfdd451ac52ee64c075421f5e&`,
-            url: "https://discord.com/invite/skyternity"
-        });
-        // const unix = Math.floor(this.bot.lastRecordedDelay['time'] / 1000);
-        const embed = await this.embed("Output", "```ansi\n```");
-        await this.send(statsEmbed, "stats")
-        await this.send(embed, "output");
+        if(!this.webhookURL) {
+            return;
+        }
+        this.webhookClient = new WebhookClient({ url: this.webhookURL })
+
+        let storageData;
+        try {
+            const storagePath = path.resolve(__dirname, '..', 'storage.json');
+            const data = fs.readFileSync(storagePath, 'utf8');
+            storageData = JSON.parse(data);
+        } catch (err) {
+            storageData = { messages: { stats: null, output: null } }; 
+            console.error("Error reading or parsing storage.json:", err);
+        }
+
+        if (!storageData.messages.stats || !storageData.messages.output) {
+            const startUnix = calcUnix(this.bot.stats.startTime);
+            const pingUnix = calcUnix(this.bot.stats.ping.lastUpdate);
+            const delayUnix = calcUnix(this.bot.stats.delay.lastUpdate);
+            const ProfitPerHour = BMK(this.bot.stats.hourlyProfit.reduce((acc, value) => acc + value, 0));
+            let averagePing;
+            if(this.bot.stats.ping.values.length != 0) {
+                averagePing = this.bot.stats.ping.values.reduce((acc, value) => acc + value, 0) / this.bot.stats.ping.values.length;
+            } else {
+                averagePing = this.bot.stats.ping.values.reduce((acc, value) => acc + value, 0)
+            }
+            const statsEmbed = await this.embed(`\`${this.bot.info['name']}\` Runtime Statistics`, `***Started <t:${startUnix}:R>***\n\n**Profit/h:** ${ProfitPerHour}  | **Total:** ${BMK(this.bot.stats.totalProfit)}\n\n**Average Ping:** ~${averagePing}ms (${this.bot.stats.ping.values.length} items) | (Last Update: <t:${pingUnix}:R>)\n\n **Delay:**  ${Math.floor(this.bot.stats.delay.value * 1000)}ms (Last Update: <t:${delayUnix}:R>)`, 0xe7ffeb, "Eternity", true);
+            statsEmbed.setAuthor({
+                name: `discord.gg/skyternity`,
+                iconURL: `https://cdn.discordapp.com/attachments/1455682430710186155/1456033797316546797/1818px-Discord_Logo_sans_texte.png?ex=6956e4a5&is=69559325&hm=40c0e358eb3f5d49a3ed4c4e04edec87be2afa3cfdd451ac52ee64c075421f5e&`,
+                url: "https://discord.com/invite/skyternity"
+            });
+            // const unix = Math.floor(this.bot.lastRecordedDelay['time'] / 1000);
+            const embed = await this.embed("Output", "```ansi\n```");
+    
+            await this.send(statsEmbed, "stats")
+            await this.send(embed, "output");
+            return;
+        }
+        this.statsMessage.id = storageData.messages.stats;
+        this.outputMessage.id = storageData.messages.output;
 
     }
 
@@ -47,8 +74,13 @@ class OutputHook {
                 delay = Math.floor(this.bot.stats.delay.value * 1000)
             }
             const ProfitPerHour = BMK(this.bot.stats.hourlyProfit.reduce((acc, value) => acc + value, 0));
-            const averagePing = this.bot.stats.ping.values.reduce((acc, value) => acc + value, 0);
-            const statsEmbed = await this.embed(`\`${this.bot.info['name']}\` Runtime Statistics`, `***Started <t:${startUnix}:R>***\n\n**Profit/h:** ${ProfitPerHour}  | **Total:** ${BMK(this.bot.stats.totalProfit)}\n\n**Average Ping:** ~${averagePing}ms (${this.bot.stats.ping.values.length}) | (Last Update: <t:${pingUnix}:R>)\n\n **Delay:**  ${delay}ms (Last Update: <t:${delayUnix}:R>)`, 0xe7ffeb, "Eternity", true);
+            let averagePing;
+            if(this.bot.stats.ping.values.length != 0) {
+                averagePing = this.bot.stats.ping.values.reduce((acc, value) => acc + value, 0) / this.bot.stats.ping.values.length;
+            } else {
+                averagePing = this.bot.stats.ping.values.reduce((acc, value) => acc + value, 0)
+            }            
+            const statsEmbed = await this.embed(`\`${this.bot.info['name']}\` Runtime Statistics`, `***Started <t:${startUnix}:R>***\n\n**Profit/h:** ${ProfitPerHour}  | **Total:** ${BMK(this.bot.stats.totalProfit)}\n\n**Average Ping:** ~${averagePing}ms (${this.bot.stats.ping.values.length} items) | (Last Update: <t:${pingUnix}:R>)\n\n **Delay:**  ${delay}ms (Last Update: <t:${delayUnix}:R>)`, 0xe7ffeb, "Eternity", true);
             
             statsEmbed.setAuthor({
                 name: `discord.gg/skyternity`,
@@ -102,12 +134,23 @@ class OutputHook {
     async send(embed, type) {
         if (!this.webhookClient) return;
         try {
+            const storagePath = path.resolve(__dirname, '..', 'storage.json');
+            const data = fs.readFileSync(storagePath, 'utf8');
+            let storage = JSON.parse(data);            
             if(type === "stats") {
                 this.statsMessage = await this.webhookClient.send({
                     embeds: [embed],
                     username: "Eternity",
                     avatarURL: "https://cdn.discordapp.com/attachments/1340811695769124914/1341163186715623474/image_1.png?ex=67b4ff0d&is=67b3ad8d&hm=26a2179b1f7709cf56aa0dfe713ea8049bc2c91857d9e03b343dab44f52ad693&",
                 });
+
+                try {
+                    if (!storage.messages) storage.messages = {};
+                    storage.messages.stats = this.statsMessage.id;
+                    fs.writeFileSync(storagePath, JSON.stringify(storage, null, 4));
+                } catch (err) {
+                    console.error(`Failed to write statsMessage id to storage.json: ${err}`);
+                }
                 return;
             }
             this.outputMessage = await this.webhookClient.send({
@@ -115,6 +158,14 @@ class OutputHook {
                 username: "Eternity",
                 avatarURL: "https://cdn.discordapp.com/attachments/1340811695769124914/1341163186715623474/image_1.png?ex=67b4ff0d&is=67b3ad8d&hm=26a2179b1f7709cf56aa0dfe713ea8049bc2c91857d9e03b343dab44f52ad693&",
             });
+
+            try {
+                if (!storage.messages) storage.messages = {};
+                storage.messages.output = this.outputMessage.id;
+                fs.writeFileSync(storagePath, JSON.stringify(storage, null, 4));
+            } catch (err) {
+                console.error(`Failed to write statsMessage id to storage.json: ${err}`);
+            }
         } catch (error) {
             console.error(`Error sending webhook: ${error}`);
         }

@@ -270,6 +270,7 @@ async function handleList(bot, auction, type) {
             }
 
             embed.setURL(`https://sky.coflnet.com/auction/${auction.uuid}`)
+            embed.setThumbnail(`https://interceptic.space/item/NEW_YEAR_CAKE`) //bc i dont have tag (todo)
             await bot.hook.send(embed)
             let relistTime = config.customization.listTime
             const auctionExpiration = (((relistTime * 60) * 60) * 1000) // hour to ms

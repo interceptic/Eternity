@@ -19,9 +19,10 @@ async function mainEntry(bot) {
     );
     let totalWorth = 0;
     if (bot.listIntervals.length > 0) {
-        bot.intervals.forEach(intervalId => {
-            clearInterval(intervalId);
+        bot.listIntervals.forEach(intervalId => {
+            clearTimeout(intervalId);
         });
+        bot.listIntervals = [];  // ← Clear the array
     }
     for(const auction of auctions) {
         totalWorth += auction.starting_bid;

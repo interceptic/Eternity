@@ -40,7 +40,7 @@ async function handleTerminal(command, message) {
             await restartBot(bot, "You chose to type \"restart\" in the console!");
             break;
         default: {
-            log(`Unknown command: ${command} is not recognized.`, "warn")
+            log(`Unknown command: ${command} is not recognized. ('help' for available commands)`, "warn")
         }
     }
 }

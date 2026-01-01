@@ -104,6 +104,7 @@ async function handleMessageEvent(message, bot) {
             const estimatedSellPrice = bot.holding[itemName][boughtPrice][0].target;
             log(JSON.stringify(bot.holding[itemName][boughtPrice][0]), "debug", true);
             const id = bot.holding[itemName][boughtPrice][0].id;
+            const tag = bot.holding[itemName][boughtPrice][0].tag;
             const completeTime = time - bot.holding[itemName][boughtPrice][0].recieveTime;
             const finder =  bot.holding[itemName][boughtPrice][0].finder;
             const afterTaxProfit = handleTaxList(boughtPrice, estimatedSellPrice);
@@ -166,11 +167,15 @@ async function handleMessageEvent(message, bot) {
                 const queue = bot.stats.activeSlots === bot.stats.totalSlots ? bot.listPipeline.length : bot.stats.activeSlots + bot.listPipeline.length - bot.stats.totalSlots
                 embed.addFields({name: "Auction House Full", value: `All slots are currently active...\n**This item is ${addOrdinalSuffix(queue)} in queue.**`, inline: false})
             }
+            embed.setThumbnail(`https://interceptic.space/item/${tag}`)
+
             bot.stats.hourlyProfit.push(afterTaxProfit);
             bot.stats.totalProfit += afterTaxProfit;
-            setTimeout(() => {
+            setTimeout(async () => {
                 bot.stats.hourlyProfit.shift();
+                await updateStats();
             }, 60 * 60 * 1000);
+            
             await updateStats();
             await bot.hook.send(embed)
 

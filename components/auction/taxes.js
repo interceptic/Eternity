@@ -2,24 +2,24 @@ function handleTaxList(price, target) {
     let profit = 0
     // 1% tax included
     if(target < 10000000) { // 10 million
-        profit = (target) * 0.98
+        profit = (target) * 0.965
     } else if (target < 100000000) { // 100 million
-        profit = (target) * 0.97
+        profit = (target) * 0.95
     }
     else { // over
-        profit = (target) * 0.965
+        profit = (target) * 0.94
     }
     return (profit - price);
 }
 
 function listWithoutTarget(price) {
     if(price < 10000000) { // 10 million
-        price  *= 0.98
+        price  *= 0.965
     } else if (price < 100000000) { // 100 million
-        price *= 0.97
+        price *= 0.95
     }
     else { // over
-        price *= 0.965
+        price *= 0.94
     }
     return price;
 }
