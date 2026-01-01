@@ -64,11 +64,12 @@ async function fetchDelay(bot) {
             if (msg.type === "writeToChat") {
                 let string = data["text"].replace(/§[0-9a-fk-or]/gi, "")
                 string = string.match(delayRegex);
-                console.log(string)
+                if(string) {
                 bot.stats.delay.value = string[1];
                 bot.stats.delay.lastUpdate = Date.now();
                 await updateStats();
                 cleanup()
+                }
             }
         }
     
@@ -76,6 +77,7 @@ async function fetchDelay(bot) {
         bot.socket.send(msg)
         timeout = setTimeout( () => {
             bot.socket.ws.removeListener('message', coflListener);
+            bot.stats.delay.value = -1;
             resolve();
             return;
         }, 2000);

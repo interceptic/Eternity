@@ -133,10 +133,6 @@ npm run dev
 - Check that your Minecraft account has access to Hypixel
 - Verify you're not already connected from another location
 
-### API Key errors
-
-- Get a new API key with `/api new` on Hypixel
-- Make sure the key is copied correctly (no extra spaces)
 
 ### Webhook not working
 

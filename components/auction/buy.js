@@ -87,6 +87,7 @@ async function buy(bot) {
 
             } else {
                 if (slot === 'potato' || slot === 'feather') {log("Missed nugget :(", "sys");};
+                if (slot === `poisonous_potato`) {log("Can't afford auction!", "sys")};
                 bot.holding[bot.latestItem][bot.latestPrice].shift()
                 bot.flayer.closeWindow(window)
                 bot.state.emit("nextFlip")

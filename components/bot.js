@@ -41,7 +41,7 @@ async function handler(username) {
 
         const pingInterval = setInterval(async () => {
             await sleep(60000); // additional grace
-            await fetchPing();
+            await fetchPing(bot);
         },  15 * 60 * 1000 ); // 15 min interval
         bot.intervals.push(pingInterval); 
 

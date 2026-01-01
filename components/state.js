@@ -128,7 +128,7 @@ class DynamicState extends EventEmitter {
                         disableOpenWindowListener(this.bot)
                         this.bot.waiting = false;
                         log("Finished buy state!", "sys")
-                        bot.state.emit("addToQueue", "checkDelay")
+                        // bot.state.emit("addToQueue", "checkDelay")
                         resolve();
                     }, remainingTime);
                 });
@@ -228,7 +228,9 @@ class DynamicState extends EventEmitter {
             this.actionPipeline.push(action);
             this.internalState = "pipelined";
             }
-        log(`Added ${action} to state queue!`, "debug")
+        if(action != "checkDelay") {
+            log(`Added ${action} to state queue!`, "debug")
+        }
         }
     }
 

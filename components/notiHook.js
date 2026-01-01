@@ -16,7 +16,7 @@ class OutputHook {
         const delayUnix = calcUnix(this.bot.stats.delay.lastUpdate);
         const ProfitPerHour = BMK(this.bot.stats.hourlyProfit.reduce((acc, value) => acc + value, 0));
         const averagePing = this.bot.stats.ping.values.reduce((acc, value) => acc + value, 0);
-        const statsEmbed = await this.embed(`\`${this.bot.info['name']}\` Runtime Statistics`, `***Started <t:${startUnix}:R>***\n\n**Profit/h:** ${ProfitPerHour}  | **Total:** ${BMK(this.bot.stats.totalProfit)}\n\n**Average Ping:** ~${averagePing}ms (${this.bot.stats.ping.values.length}) | (Last Update: <t:${pingUnix}:R>)\n\n **Delay:**  ${(this.bot.stats.delay.value * 1000).toFixed(3)}ms (Last Update: <t:${delayUnix}:R>)
+        const statsEmbed = await this.embed(`\`${this.bot.info['name']}\` Runtime Statistics`, `***Started <t:${startUnix}:R>***\n\n**Profit/h:** ${ProfitPerHour}  | **Total:** ${BMK(this.bot.stats.totalProfit)}\n\n**Average Ping:** ~${averagePing}ms (${this.bot.stats.ping.values.length}) | (Last Update: <t:${pingUnix}:R>)\n\n **Delay:**  ${Math.floor(this.bot.stats.delay.value * 1000)}ms (Last Update: <t:${delayUnix}:R>)
 `, 0xe7ffeb, "Eternity", true);
         
         statsEmbed.setAuthor({
@@ -40,9 +40,15 @@ class OutputHook {
             const startUnix = calcUnix(this.bot.stats.startTime);
             const pingUnix = calcUnix(this.bot.stats.ping.lastUpdate);
             const delayUnix = calcUnix(this.bot.stats.delay.lastUpdate);
+            let delay;
+            if (this.bot.stats.delay.value < 0) { // IF N/A
+                delay = "N/A"
+            } else {
+                delay = Math.floor(this.bot.stats.delay.value * 1000)
+            }
             const ProfitPerHour = BMK(this.bot.stats.hourlyProfit.reduce((acc, value) => acc + value, 0));
             const averagePing = this.bot.stats.ping.values.reduce((acc, value) => acc + value, 0);
-            const statsEmbed = await this.embed(`\`${this.bot.info['name']}\` Runtime Statistics`, `***Started <t:${startUnix}:R>***\n\n**Profit/h:** ${ProfitPerHour}  | **Total:** ${BMK(this.bot.stats.totalProfit)}\n\n**Average Ping:** ~${averagePing}ms (${this.bot.stats.ping.values.length}) | (Last Update: <t:${pingUnix}:R>)\n\n **Delay:**  ${(this.bot.stats.delay.value * 1000).toFixed(3)}ms (Last Update: <t:${delayUnix}:R>)`, 0xe7ffeb, "Eternity", true);
+            const statsEmbed = await this.embed(`\`${this.bot.info['name']}\` Runtime Statistics`, `***Started <t:${startUnix}:R>***\n\n**Profit/h:** ${ProfitPerHour}  | **Total:** ${BMK(this.bot.stats.totalProfit)}\n\n**Average Ping:** ~${averagePing}ms (${this.bot.stats.ping.values.length}) | (Last Update: <t:${pingUnix}:R>)\n\n **Delay:**  ${delay}ms (Last Update: <t:${delayUnix}:R>)`, 0xe7ffeb, "Eternity", true);
             
             statsEmbed.setAuthor({
                 name: `discord.gg/skyternity`,
