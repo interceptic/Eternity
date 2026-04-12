@@ -52,13 +52,20 @@ function parseWindowTitle(windowTitle) {
 /** Create Auction button: prefer golden_horse_armor without custom_name; else any golden_horse_armor in the GUI. */
 function findCreateAuctionSlotIndex(slots) {
     if (!slots?.length) return null;
+    let namedMatch = null;
     let anyArmor = null;
     for (let si = 0; si < Math.min(slots.length, 54); si++) {
         const s = slots[si];
+        const customName = getSlotCustomName(s)?.replace(/§[0-9a-fk-or]/gi, '').toLowerCase();
+        if (customName?.includes('create auction')) {
+            namedMatch = si;
+            break;
+        }
         if (s?.name !== 'golden_horse_armor') continue;
         if (!s.componentMap?.has('custom_name')) return si;
         anyArmor = si;
     }
+    if (namedMatch !== null) return namedMatch;
     return anyArmor;
 }
 
@@ -106,7 +113,7 @@ function logManageAuctionsFullDump(slots, label) {
  * Poll currentWindow.slots for golden_horse_armor.
  * `openWindowPacket` is the raw open_window payload (for windowId vs currentWindow.id checks).
  */
-async function waitForCreateAuctionSlot(bot, openWindowPacket, maxMs = 10000) {
+async function waitForCreateAuctionSlot(bot, openWindowPacket, maxMs = 8000) {
     const packetWid = openWindowPacket?.windowId;
     const t0 = Date.now();
     let lastProgressLog = t0;
@@ -118,54 +125,72 @@ async function waitForCreateAuctionSlot(bot, openWindowPacket, maxMs = 10000) {
         "debug"
     );
 
-    while (Date.now() - t0 < maxMs) {
-        iterations++;
-        const cw = bot.flayer.currentWindow;
-        const slots = cw?.slots;
+    return new Promise((resolve) => {
+        const finish = (idx = null) => {
+            clearTimeout(timer);
+            clearInterval(poller);
+            bot.flayer._client.removeListener('packet', onPacket);
+            resolve(idx);
+        };
 
-        if (!warnedIdMismatch && packetWid != null && cw?.id != null && Number(cw.id) !== Number(packetWid)) {
-            warnedIdMismatch = true;
-            log(
-                `[List] MA warn: currentWindow.id (${cw.id}) !== open_window packet windowId (${packetWid}) — scanning may be wrong window`,
-                "warn"
-            );
-        }
+        const scanCurrentWindow = () => {
+            iterations++;
+            const cw = bot.flayer.currentWindow;
+            const slots = cw?.slots;
+            const sameWindow = packetWid == null || cw?.id == null || Number(cw.id) === Number(packetWid);
 
-        if (slots?.length) {
-            const idx = findCreateAuctionSlotIndex(slots);
-            if (idx !== null) {
-                log(`[List] MA found golden_horse_armor at slot ${idx} after ${Date.now() - t0}ms (${iterations} loops)`, "debug");
-                return idx;
-            }
-        }
-
-        if (Date.now() - lastProgressLog >= 600) {
-            lastProgressLog = Date.now();
-            if (!slots?.length) {
+            if (!warnedIdMismatch && packetWid != null && cw?.id != null && !sameWindow) {
+                warnedIdMismatch = true;
                 log(
-                    `[List] MA progress ${Date.now() - t0}ms: no mineflayer window yet (cw=null means window_items likely never parsed)`,
-                    "debug"
+                    `[List] MA warn: currentWindow.id (${cw.id}) !== open_window packet windowId (${packetWid}) — waiting for matching mineflayer window`,
+                    "warn"
                 );
-            } else {
-                const snap = manageAuctionsSlotSnapshot(slots);
-                log(`[List] MA progress ${Date.now() - t0}ms: ${snap.text}`, "debug");
             }
-        }
 
-        // Tight loop when we have a window; slow poll when mineflayer never set currentWindow (saves CPU).
-        if (!cw) {
-            await sleep(50);
-        } else {
-            await new Promise((r) => setImmediate(r));
-        }
-    }
+            if (sameWindow && slots?.length) {
+                const idx = findCreateAuctionSlotIndex(slots);
+                if (idx !== null) {
+                    log(`[List] MA found Create Auction at slot ${idx} after ${Date.now() - t0}ms (${iterations} scans)`, "debug");
+                    finish(idx);
+                    return true;
+                }
+            }
 
-    log(`[List] MA gave up after ${maxMs}ms (${iterations} polls)`, "warn");
-    const finalSlots = bot.flayer.currentWindow?.slots;
-    const snap = manageAuctionsSlotSnapshot(finalSlots);
-    log(`[List] MA final snapshot: ${snap.text}`, "warn");
-    logManageAuctionsFullDump(finalSlots, "timeout");
-    return null;
+            if (Date.now() - lastProgressLog >= 600) {
+                lastProgressLog = Date.now();
+                if (!slots?.length) {
+                    log(
+                        `[List] MA progress ${Date.now() - t0}ms: waiting for mineflayer slot data (cw=${cw ? 'present' : 'null'})`,
+                        "debug"
+                    );
+                } else {
+                    const snap = manageAuctionsSlotSnapshot(slots);
+                    log(`[List] MA progress ${Date.now() - t0}ms: ${snap.text}`, "debug");
+                }
+            }
+
+            return false;
+        };
+
+        const onPacket = (_data, meta) => {
+            const n = meta?.name;
+            if (n !== 'set_slot' && n !== 'set_container_slot' && n !== 'window_items' && n !== 'set_container_content') return;
+            scanCurrentWindow();
+        };
+
+        const poller = setInterval(scanCurrentWindow, 50);
+        const timer = setTimeout(() => {
+            log(`[List] MA gave up after ${maxMs}ms (${iterations} scans)`, "warn");
+            const finalSlots = bot.flayer.currentWindow?.slots;
+            const snap = manageAuctionsSlotSnapshot(finalSlots);
+            log(`[List] MA final snapshot: ${snap.text}`, "warn");
+            logManageAuctionsFullDump(finalSlots, "timeout");
+            finish(null);
+        }, maxMs);
+
+        bot.flayer._client.on('packet', onPacket);
+        scanCurrentWindow();
+    });
 }
 
 async function claimItem(bot, auction, type = false) {
@@ -290,25 +315,18 @@ async function handleList(bot, auction, type) {
 
                         let createAuctionSlot = await waitForCreateAuctionSlot(bot, window);
 
-                        // If window_items never parses, mineflayer keeps currentWindow=null — cannot scan slots.
-                        // Server still accepts window_click with the open_window packet's windowId; Hypixel MA uses slot 33 for Create Auction.
-                        if (createAuctionSlot === null && !bot.flayer.currentWindow && window.windowId != null) {
-                            createAuctionSlot = 33;
+                        if (createAuctionSlot === null) {
                             log(
-                                `[List] MA fallback: blind-click Create Auction slot ${createAuctionSlot} (wid=${window.windowId}) — no mineflayer window`,
+                                `[List] Could not find Create Auction slot for ${auction.item_name} — mineflayer window never loaded expected slot data`,
                                 "warn"
                             );
+                            cleanup();
+                            reject("Manage Auctions slot data unavailable");
+                            return;
                         }
 
-                        if (createAuctionSlot !== null) {
-                            log(`[List] Clicking Create Auction at slot ${createAuctionSlot}`, "sys", true);
-                            bot.packets.click(createAuctionSlot, window.windowId);
-                        } else {
-                            log(
-                                `[List] Could not find Create Auction slot for ${auction.item_name} — see [List] MA dump / progress lines above`,
-                                "warn"
-                            );
-                        }
+                        log(`[List] Clicking Create Auction at slot ${createAuctionSlot}`, "sys", true);
+                        bot.packets.click(createAuctionSlot, window.windowId);
                         break;
 
                     case title.includes("Auction Duration"):
