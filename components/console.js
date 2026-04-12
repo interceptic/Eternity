@@ -9,6 +9,14 @@ const rl = readline.createInterface({
 async function handleTerminal(command, message) {
     let bot = global.bot;
     switch (command) {
+        case 'help':
+            log("Available commands:", "sys")
+            log("  chat <message>    - Send a chat message in-game", "base")
+            log("  /stats            - Show bot statistics (coming soon)", "base")
+            log("  state             - Display current bot state", "base")
+            log("  /cofl <args>      - Send COFL socket command", "base")
+            log("  restart           - Manually restart the bot", "base")
+            break;
         case 'chat':
             bot.chat(message)
             break;

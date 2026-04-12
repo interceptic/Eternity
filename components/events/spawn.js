@@ -8,19 +8,23 @@ const Socket = require('../socket')
 async function onSpawn(bot) {
     // remove prev listeners to prevent duplicates
     bot.flayer.removeAllListeners('spawn');
+    let mainEntryRan = false;
     
     bot.flayer.on('spawn', async () => {
         const state = bot.state.getState();
-        await sleep(600)
-        const locraw = await getLocraw(bot)
+        log(`[Spawn] Spawn event fired, state: ${state}`, "debug", true);
+        await sleep(2000)
+        const locraw = await getLocraw(bot).catch(err => {
+            log(`[Spawn] Failed to get locraw: ${err}`, "warn");
+            return null;
+        });
         if (locraw?.gametype && locraw?.map && locraw?.gametype === "SKYBLOCK" && locraw?.map === "Private Island") {
             bot.state.setState("waiting");
-            await sleep(4000)
-            await mainEntry(bot)
-            // if (bot.socket === null) {
-            //     bot.socket = new Socket(bot);
-            //     bot.socket.open()
-            // }
+            if (!mainEntryRan) {
+                mainEntryRan = true;
+                await sleep(4000)
+                await mainEntry(bot)
+            }
             return;
         };
 

@@ -19,7 +19,7 @@
         "events": "^3.3.0",
         "json": "^11.0.0",
         "minecraft-data": "^3.85.0",
-        "mineflayer": "^4.26.0",
+        "mineflayer": "^4.37.0",
         "prismarine-nbt": "^2.7.0",
         "ws": "^8.18.0"
     },

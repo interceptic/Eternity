@@ -1,34 +1,94 @@
-// completly from tpm, nothing really to improve for packet level clicks
-function makePackets(client) {
+const { log } = require('./utils');
+
+function makePackets(client, bot) {
+    let currentStateId = 0;
+
+    client.on('window_items', (packet) => {
+        if (packet.stateId !== undefined) {
+            currentStateId = packet.stateId;
+        }
+    });
+
+    client.on('set_slot', (packet) => {
+        if (packet.stateId !== undefined) {
+            currentStateId = packet.stateId;
+        }
+    });
+
     return {
         sendMessage: function (text) {
-            client.write('chat', {
-                message: text
-            }) // sends message 
+            try {
+                if (client.chat) {
+                    client.chat(text);
+                } else {
+                    client.write('chat', { message: text });
+                }
+            } catch (error) {
+                log(`[Packets] Failed to send message: ${error.message}`, "warn");
+            }
         },
-        click: function (slot, id, itemID) {
-            client.write('window_click', {
-                windowId: id,
-                slot: slot,
-                mouseButton: 2,
-                mode: 3,
-                item: { "blockId": itemID }, // typically -1 
-                action: this.actionID
-            })
-            this.actionID++;
+
+        // 1.21.11: cursorItem is `option HashedSlot` — null means "no item"
+        click: function (slot, windowId) {
+            try {
+                client.write('window_click', {
+                    windowId: windowId,
+                    stateId: currentStateId,
+                    slot: slot,
+                    mouseButton: 0,
+                    mode: 0,
+                    changedSlots: [],
+                    cursorItem: undefined
+                });
+                this.actionID++;
+            } catch (error) {
+                log(`[Packets] Window click failed: ${error.message}`, "warn");
+            }
         },
+
+        shiftClick: function (slot, windowId) {
+            try {
+                client.write('window_click', {
+                    windowId: windowId,
+                    stateId: currentStateId,
+                    slot: slot,
+                    mouseButton: 0,
+                    mode: 1,
+                    changedSlots: [],
+                    cursorItem: undefined
+                });
+                this.actionID++;
+            } catch (error) {
+                log(`[Packets] Shift-click failed: ${error.message}`, "warn");
+            }
+        },
+
         bump: function () {
             this.actionID++;
         },
-        confirmClick: function (windowID) {
-            client.write('transaction', {
-                windowId: windowID,
-                action: this.actionID,
-                accepted: true
-            })
+
+        getStateId: function () {
+            return currentStateId;
         },
+
+        setStateId: function (stateId) {
+            currentStateId = stateId;
+        },
+
+        confirmClick: function (windowID) {
+            // no-op in 1.17+ (stateId replaces transaction confirmations)
+        },
+
+        closeWindow: function (windowId) {
+            try {
+                client.write('close_window', { windowId: windowId });
+            } catch (error) {
+                log(`[Packets] Error closing window: ${error.message}`, "warn");
+            }
+        },
+
         actionID: 1
-    }
+    };
 }
 
 module.exports = { makePackets };

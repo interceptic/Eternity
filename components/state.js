@@ -1,8 +1,8 @@
 const { claimAuction } = require("./auction/main");
-const { sleep, log } = require("./utils");
+const { sleep, log, fetchDelay } = require("./utils");
+const { styleText, BMK } = require("./helpers");
 const EventEmitter = require('events');
 const { buy, disableOpenWindowListener } = require("./auction/buy");
-const { styleText, BMK, fetchDelay } = require("./utils");
 const { claimItem } = require("./auction/list")
 const Socket = require('./socket')
 
@@ -79,6 +79,7 @@ class DynamicState extends EventEmitter {
                         this.bot.waiting = false;
                         this.bot.latestItem = auction.itemName.replace(/§[0-9a-fk-or]/g, '');
                         this.bot.latestPrice = auction.startingBid
+                        this.bot.auctionStart = auction.purchaseAt;
                         this.bot.chat(`/viewauction ${auction.id}`);
                         log(styleText(`Starting buy request for ${auction.itemName} at ${BMK(auction.startingBid)} (${BMK(auction.target - auction.startingBid)})`), "sys");
                         log(`Time to send message:  ${Date.now() - auction.recieveTime}ms`, "sys", true)

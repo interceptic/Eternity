@@ -1,40 +1,36 @@
-const { sleep } = require('../utils');
+const { sleep, log } = require('../utils');
 
 async function getLocraw(bot) {
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
         bot.flayer.removeListener('message', messageHandler);
-        
-        // reject(new Error('getLocraw timeout - no response received'));
         reject("No response (locraw)")
         return
       }, 10000);
       
-      // handles messages
       const messageHandler = (jsonMsg) => {
         try {
-          // string conversion
           const msgString = typeof jsonMsg === 'string' ? jsonMsg : jsonMsg.toString()
+          log(`[Locraw] Received message while waiting: "${msgString.substring(0, 100)}"`, "debug", true);
           
-          // json check
           if (msgString.startsWith('{') && msgString.endsWith('}')) {
             const data = JSON.parse(msgString)
             if (data.server || data.gametype || data.map) {
-              clearTimeout(timeout); // Clear timeout
+              clearTimeout(timeout);
               bot.flayer.removeListener('message', messageHandler)
+              log(`[Locraw] Got response: ${JSON.stringify(data)}`, "debug", true);
               resolve(data)
             }
           }
         } catch (err) {
-          console.error('Error parsing locraw:', err)
+          log(`[Locraw] Parse error: ${err.message}`, "debug", true);
         }
       }
   
-      // Listen for messages
       bot.flayer.on('message', messageHandler)
       
-      
       setTimeout(() => {
+        log(`[Locraw] Sending /locraw command`, "debug", true);
         bot.chat('/locraw')
       }, 300)
     })

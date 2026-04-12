@@ -1,6 +1,7 @@
 const { WebhookClient, EmbedBuilder } = require('discord.js');
 const fs = require('fs');
-const path = require('path');  // ← ADD THIS LINE
+const path = require('path');
+const { BMK } = require('./helpers.js');
 
 
 class OutputHook {
@@ -36,7 +37,7 @@ class OutputHook {
             const ProfitPerHour = BMK(this.bot.stats.hourlyProfit.reduce((acc, value) => acc + value, 0));
             let averagePing;
             if(this.bot.stats.ping.values.length != 0) {
-                averagePing = this.bot.stats.ping.values.reduce((acc, value) => acc + value, 0) / this.bot.stats.ping.values.length;
+                averagePing = (this.bot.stats.ping.values.reduce((acc, value) => acc + value, 0) / this.bot.stats.ping.values.length).toFixed(1);
             } else {
                 averagePing = this.bot.stats.ping.values.reduce((acc, value) => acc + value, 0)
             }
@@ -76,7 +77,7 @@ class OutputHook {
             const ProfitPerHour = BMK(this.bot.stats.hourlyProfit.reduce((acc, value) => acc + value, 0));
             let averagePing;
             if(this.bot.stats.ping.values.length != 0) {
-                averagePing = this.bot.stats.ping.values.reduce((acc, value) => acc + value, 0) / this.bot.stats.ping.values.length;
+                averagePing = (this.bot.stats.ping.values.reduce((acc, value) => acc + value, 0) / this.bot.stats.ping.values.length).toFixed(1);
             } else {
                 averagePing = this.bot.stats.ping.values.reduce((acc, value) => acc + value, 0)
             }            
@@ -94,6 +95,17 @@ class OutputHook {
                 avatarURL: "https://cdn.discordapp.com/attachments/1340811695769124914/1341163186715623474/image_1.png?ex=67b4ff0d&is=67b3ad8d&hm=26a2179b1f7709cf56aa0dfe713ea8049bc2c91857d9e03b343dab44f52ad693&",
             });
         } catch (error) {
+            try {
+                const storagePath = path.resolve(__dirname, '..', 'storage.json');
+                const data = fs.readFileSync(storagePath, 'utf8');
+                let storage = JSON.parse(data);
+                storage.messages = {};
+                storage.messages.stats = 0;
+                storage.messages.output = 0;
+                fs.writeFileSync(storagePath, JSON.stringify(storage, null, 4));
+            } catch (e) {
+                console.error("Error updating discord message values! " + error)
+            }
             console.error(`Error editing output webhook message: ${error}`);
         }
     }
@@ -127,6 +139,19 @@ class OutputHook {
                 avatarURL: "https://cdn.discordapp.com/attachments/1340811695769124914/1341163186715623474/image_1.png?ex=67b4ff0d&is=67b3ad8d&hm=26a2179b1f7709cf56aa0dfe713ea8049bc2c91857d9e03b343dab44f52ad693&",
             });
         } catch (error) {
+            try {
+                const storagePath = path.resolve(__dirname, '..', 'storage.json');
+                const data = fs.readFileSync(storagePath, 'utf8');
+                let storage = JSON.parse(data);
+                storage.messages = {};
+                storage.messages.stats = 0;
+                storage.messages.output = 0;
+                fs.writeFileSync(storagePath, JSON.stringify(storage, null, 4));
+            } 
+            catch (e) {
+                console.error("Error updating discord message values! " + error)
+            }
+            
             console.error(`Error editing output webhook message: ${error}`);
         }
     }
@@ -217,22 +242,6 @@ function formatOutput(line) {
         line = line.split(key).join(value);
     }
     return line + discordAnsiColors['\x1b[0m']; // reset at the end
-}
-
-function BMK(num, additionalDecimalPoints = 0 ) {
-    let negative = num < 0;
-    num = Math.abs(num);
-    let thingy;
-    if (num >= 1000000000) {
-        thingy = (num / 1000000000).toFixed(1 + additionalDecimalPoints) + 'B';
-    } else if (num >= 1000000) {
-        thingy = (num / 1000000).toFixed(1 + additionalDecimalPoints) + 'M';
-    } else if (num >= 1000) {
-        thingy = (num / 1000).toFixed(1 + additionalDecimalPoints) + 'K';
-    } else {
-        thingy = num.toString();
-    }
-    return `${negative ? '-' : ''}${thingy}`;
 }
 
 function calcUnix(time) {

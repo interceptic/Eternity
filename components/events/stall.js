@@ -59,12 +59,24 @@ async function stall(bot) {
     return bot.stallCalls
 }
 
+// Track restart attempts to prevent infinite loops
+let restartAttempts = 0;
+const MAX_RESTART_ATTEMPTS = 3;
+
 async function restartBot(bot, reason) {
     if (bot.state.getState() !== "reconnecting") {
-        log("Restarting bot...", "sys")
-        const embed = await bot.hook.embed("Restarting Bot", `**Bot connection is being restarted...**\n\n**Reason:** \`${reason}\``, "red")
-        await bot.hook.send(embed)
-        bot.state.setState("reconnecting")
+        restartAttempts++;
+        log(`Restarting bot... (attempt ${restartAttempts}/${MAX_RESTART_ATTEMPTS})`, "sys");
+
+        if (restartAttempts > MAX_RESTART_ATTEMPTS) {
+            log("Max restart attempts reached. Stopping.", "warn");
+            await cleanExit("Max restart attempts exceeded");
+            return;
+        }
+
+        const embed = await bot.hook.embed("Restarting Bot", `**Bot connection is being restarted...**\n\n**Reason:** \`${reason}\`\n**Attempt:** ${restartAttempts}/${MAX_RESTART_ATTEMPTS}`, "red");
+        await bot.hook.send(embed);
+        bot.state.setState("reconnecting");
         try {
             // Clean up existing connections
             if (bot.socket) {
@@ -88,19 +100,20 @@ async function restartBot(bot, reason) {
                 });
             }
 
-            // wait for clean
-            await new Promise(resolve => setTimeout(resolve, 4000))
+            // Wait longer between restarts to avoid rate limiting (30 seconds)
+            log("Waiting 30 seconds before reconnecting to avoid rate limiting...", "sys");
+            await new Promise(resolve => setTimeout(resolve, 30000));
+
             // restart entire script
-            const { handler } = require('../bot')
-            // const config = require('../../config.json')
+            const { handler } = require('../bot');
             bot.flayer.removeAllListeners();
-            await sleep(4000)
-            await handler(bot.flayer._client.username)
+            await sleep(2000);
+            await handler(bot.flayer._client.username);
 
         } catch (error) {
-            console.error("Error during restart:", error)
+            console.error("Error during restart:", error);
             // exit if failure to restart (fixes restart loop)
-            await cleanExit("Restart Error!")
+            await cleanExit("Restart Error!");
         }
     }
 }

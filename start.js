@@ -8,6 +8,10 @@ const { version } = require("./package.json");
 process.env.NODE_ENV = process.env.NODE_ENV || "main";
 process.env.NODE_NO_WARNINGS = process.env.NODE_NO_WARNINGS || "1";
 
+process.on('unhandledRejection', (reason, promise) => {
+    log(`Unhandled rejection: ${reason}`, "warn");
+});
+
 
 async function main() {
     log(`Attempting start on version: ${version}`, "sys", true);
